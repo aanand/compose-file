@@ -106,17 +106,21 @@ func parseMappingOrList(mappingOrList interface{}, sep, configKey string) (map[s
 				return nil, fmt.Errorf("%s.%s has non-string value: %#v", configKey, name, value)
 			}
 		}
-	} else if list, ok := mappingOrList.([]string); ok {
+	} else if list, ok := mappingOrList.([]interface{}); ok {
 		for _, value := range list {
-			parts := strings.SplitN(value, sep, 2)
-			if len(parts) == 1 {
-				result[parts[0]] = ""
+			if str, ok := value.(string); ok {
+				parts := strings.SplitN(str, sep, 2)
+				if len(parts) == 1 {
+					result[parts[0]] = ""
+				} else {
+					result[parts[0]] = parts[1]
+				}
 			} else {
-				result[parts[0]] = parts[1]
+				return nil, fmt.Errorf("%s has a non-string item: %#v", configKey, value)
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("%s must be a mapping or a list of strings, got: %#v", configKey, mappingOrList)
+		return nil, fmt.Errorf("%s must be a mapping or a list, got: %#v", configKey, mappingOrList)
 	}
 
 	return result, nil

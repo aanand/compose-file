@@ -16,8 +16,7 @@ func buildConfigDetails(source dict) ConfigDetails {
 	}
 }
 
-func TestParseYAML(t *testing.T) {
-	source := `
+var sampleYAML = []byte(`
 version: "2.1"
 services:
   foo:
@@ -26,62 +25,50 @@ services:
     image: busybox
     environment:
       - FOO=1
-`
+`)
 
-	configFile, err := ParseYAML([]byte(source), "filename.yml")
+var sampleDict = dict{
+	"version": "2.1",
+	"services": dict{
+		"foo": dict{
+			"image": "busybox",
+		},
+		"bar": dict{
+			"image":       "busybox",
+			"environment": []interface{}{"FOO=1"},
+		},
+	},
+}
+
+var sampleConfig = Config{
+	Services: []ServiceConfig{
+		ServiceConfig{
+			Name:        "foo",
+			Image:       "busybox",
+			Environment: nil,
+		},
+		ServiceConfig{
+			Name:        "bar",
+			Image:       "busybox",
+			Environment: map[string]string{"FOO": "1"},
+		},
+	},
+}
+
+func TestParseYAML(t *testing.T) {
+	configFile, err := ParseYAML(sampleYAML, "filename.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := dict{
-		"version": "2.1",
-		"services": dict{
-			"foo": dict{
-				"image": "busybox",
-			},
-			"bar": dict{
-				"image":       "busybox",
-				"environment": []interface{}{"FOO=1"},
-			},
-		},
-	}
-
-	assert.Equal(t, expected, configFile.Config)
+	assert.Equal(t, sampleDict, configFile.Config)
 }
 
 func TestLoad(t *testing.T) {
-	source := dict{
-		"version": "2.1",
-		"services": dict{
-			"foo": dict{
-				"image": "busybox",
-			},
-			"bar": dict{
-				"image":       "busybox",
-				"environment": []string{"FOO=1"},
-			},
-		},
-	}
-
-	expected := Config{
-		Services: []ServiceConfig{
-			ServiceConfig{
-				Name:        "foo",
-				Image:       "busybox",
-				Environment: nil,
-			},
-			ServiceConfig{
-				Name:        "bar",
-				Image:       "busybox",
-				Environment: map[string]string{"FOO": "1"},
-			},
-		},
-	}
-
-	actual, err := Load(buildConfigDetails(source))
+	actual, err := Load(buildConfigDetails(sampleDict))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, expected, *actual)
+	assert.Equal(t, sampleConfig, *actual)
 }
