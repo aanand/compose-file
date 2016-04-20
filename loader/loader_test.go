@@ -145,6 +145,26 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
 }
 
+func TestParseAndLoad(t *testing.T) {
+	actual, err := loadYAML(sampleYAML)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
+	assert.Equal(t, sampleConfig.Networks, actual.Networks)
+	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
+}
+
+func loadYAML(yaml []byte) (*types.Config, error) {
+	configFile, err := ParseYAML(yaml, "filename.yml")
+	if err != nil {
+		return nil, err
+	}
+
+	return Load(buildConfigDetails(configFile.Config))
+}
+
 func serviceSort(services []types.ServiceConfig) []types.ServiceConfig {
 	sort.Sort(servicesByName(services))
 	return services
