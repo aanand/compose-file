@@ -1,17 +1,19 @@
-package main
+package loader
 
 import (
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/aanand/compose-file/types"
 )
 
-func buildConfigDetails(source dict) ConfigDetails {
-	return ConfigDetails{
+func buildConfigDetails(source types.Dict) types.ConfigDetails {
+	return types.ConfigDetails{
 		WorkingDir: ".",
-		ConfigFiles: []ConfigFile{
-			ConfigFile{Filename: "filename.yml", Config: source},
+		ConfigFiles: []types.ConfigFile{
+			types.ConfigFile{Filename: "filename.yml", Config: source},
 		},
 		Environment: nil,
 	}
@@ -43,37 +45,37 @@ networks:
         - subnet: 172.28.0.0/16
 `)
 
-var sampleDict = dict{
+var sampleDict = types.Dict{
 	"version": "2.1",
-	"services": dict{
-		"foo": dict{
+	"services": types.Dict{
+		"foo": types.Dict{
 			"image": "busybox",
 		},
-		"bar": dict{
+		"bar": types.Dict{
 			"image":       "busybox",
 			"environment": []interface{}{"FOO=1"},
 		},
 	},
-	"volumes": dict{
-		"hello": dict{
+	"volumes": types.Dict{
+		"hello": types.Dict{
 			"driver": "default",
-			"driver_opts": dict{
+			"driver_opts": types.Dict{
 				"beep": "boop",
 			},
 		},
 	},
-	"networks": dict{
-		"default": dict{
+	"networks": types.Dict{
+		"default": types.Dict{
 			"driver": "bridge",
-			"driver_opts": dict{
+			"driver_opts": types.Dict{
 				"beep": "boop",
 			},
 		},
-		"with_ipam": dict{
-			"ipam": dict{
+		"with_ipam": types.Dict{
+			"ipam": types.Dict{
 				"driver": "default",
 				"config": []interface{}{
-					dict{
+					types.Dict{
 						"subnet": "172.28.0.0/16",
 					},
 				},
@@ -82,39 +84,39 @@ var sampleDict = dict{
 	},
 }
 
-var sampleConfig = Config{
-	Services: []ServiceConfig{
-		ServiceConfig{
+var sampleConfig = types.Config{
+	Services: []types.ServiceConfig{
+		types.ServiceConfig{
 			Name:        "foo",
 			Image:       "busybox",
 			Environment: nil,
 		},
-		ServiceConfig{
+		types.ServiceConfig{
 			Name:        "bar",
 			Image:       "busybox",
 			Environment: map[string]string{"FOO": "1"},
 		},
 	},
-	Networks: map[string]NetworkConfig{
-		"default": NetworkConfig{
+	Networks: map[string]types.NetworkConfig{
+		"default": types.NetworkConfig{
 			Driver: "bridge",
 			DriverOpts: map[string]string{
 				"beep": "boop",
 			},
 		},
-		"with_ipam": NetworkConfig{
-			IPAM: IPAMConfig{
+		"with_ipam": types.NetworkConfig{
+			IPAM: types.IPAMConfig{
 				Driver: "default",
-				Config: []IPAMPool{
-					IPAMPool{
+				Config: []types.IPAMPool{
+					types.IPAMPool{
 						Subnet: "172.28.0.0/16",
 					},
 				},
 			},
 		},
 	},
-	Volumes: map[string]VolumeConfig{
-		"hello": VolumeConfig{
+	Volumes: map[string]types.VolumeConfig{
+		"hello": types.VolumeConfig{
 			Driver: "default",
 			DriverOpts: map[string]string{
 				"beep": "boop",
@@ -143,12 +145,12 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
 }
 
-func serviceSort(services []ServiceConfig) []ServiceConfig {
+func serviceSort(services []types.ServiceConfig) []types.ServiceConfig {
 	sort.Sort(servicesByName(services))
 	return services
 }
 
-type servicesByName []ServiceConfig
+type servicesByName []types.ServiceConfig
 
 func (sbn servicesByName) Len() int           { return len(sbn) }
 func (sbn servicesByName) Swap(i, j int)      { sbn[i], sbn[j] = sbn[j], sbn[i] }
