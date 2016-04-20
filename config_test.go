@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,5 +71,16 @@ func TestLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, sampleConfig, *actual)
+	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
 }
+
+func serviceSort(services []ServiceConfig) []ServiceConfig {
+	sort.Sort(servicesByName(services))
+	return services
+}
+
+type servicesByName []ServiceConfig
+
+func (sbn servicesByName) Len() int           { return len(sbn) }
+func (sbn servicesByName) Swap(i, j int)      { sbn[i], sbn[j] = sbn[j], sbn[i] }
+func (sbn servicesByName) Less(i, j int) bool { return sbn[i].Name < sbn[j].Name }
