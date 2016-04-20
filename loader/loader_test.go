@@ -172,10 +172,13 @@ func TestInvalidTopLevelObjectType(t *testing.T) {
 
 func TestNonStringKeys(t *testing.T) {
 	_, err := loadYAML(`
+version: "2.1"
 123:
-  image: busybox
+  foo:
+    image: busybox
 `)
 	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Non-string key at top level: 123")
 
 	_, err = loadYAML(`
 version: "2.1"
@@ -186,7 +189,7 @@ services:
     image: busybox
 `)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "Non-string key")
+	assert.Contains(t, err.Error(), "Non-string key in services: 123")
 
 	_, err = loadYAML(`
 version: "2.1"
@@ -200,7 +203,7 @@ networks:
         - 123: oh dear
 `)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "Non-string key")
+	assert.Contains(t, err.Error(), "Non-string key in networks.default.ipam.config[0]: 123")
 }
 
 func loadYAML(yaml string) (*types.Config, error) {

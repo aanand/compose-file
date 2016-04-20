@@ -19,7 +19,7 @@ func ParseYAML(source []byte, filename string) (*types.ConfigFile, error) {
 	if !ok {
 		return nil, fmt.Errorf("Top-level object must be a mapping")
 	}
-	converted, err := convertToStringKeysRecursive(cfgMap)
+	converted, err := convertToStringKeysRecursive(cfgMap, "")
 	if err != nil {
 		return nil, err
 	}
@@ -76,15 +76,27 @@ func validateAgainstConfigSchema(file types.ConfigFile) error {
 	return schema.Validate(file.Config)
 }
 
-func convertToStringKeysRecursive(value interface{}) (interface{}, error) {
+func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interface{}, error) {
 	if mapping, ok := value.(map[interface{}]interface{}); ok {
 		dict := make(types.Dict)
 		for key, entry := range mapping {
 			str, ok := key.(string)
 			if !ok {
-				return nil, fmt.Errorf("Non-string key: %#v", key)
+				var location string
+				if keyPrefix == "" {
+					location = "at top level"
+				} else {
+					location = fmt.Sprintf("in %s", keyPrefix)
+				}
+				return nil, fmt.Errorf("Non-string key %s: %#v", location, key)
 			}
-			convertedEntry, err := convertToStringKeysRecursive(entry)
+			var newKeyPrefix string
+			if keyPrefix == "" {
+				newKeyPrefix = str
+			} else {
+				newKeyPrefix = fmt.Sprintf("%s.%s", keyPrefix, str)
+			}
+			convertedEntry, err := convertToStringKeysRecursive(entry, newKeyPrefix)
 			if err != nil {
 				return nil, err
 			}
@@ -93,8 +105,9 @@ func convertToStringKeysRecursive(value interface{}) (interface{}, error) {
 		return dict, nil
 	} else if list, ok := value.([]interface{}); ok {
 		var convertedList []interface{}
-		for _, entry := range list {
-			convertedEntry, err := convertToStringKeysRecursive(entry)
+		for index, entry := range list {
+			newKeyPrefix := fmt.Sprintf("%s[%d]", keyPrefix, index)
+			convertedEntry, err := convertToStringKeysRecursive(entry, newKeyPrefix)
 			if err != nil {
 				return nil, err
 			}
