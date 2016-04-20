@@ -33,11 +33,23 @@ type ServiceConfig struct {
 }
 
 type NetworkConfig struct {
+	Driver     string
+	DriverOpts map[string]string
+	IPAM       IPAMConfig
+}
+
+type IPAMConfig struct {
 	Driver string
+	Config []IPAMPool
+}
+
+type IPAMPool struct {
+	Subnet string
 }
 
 type VolumeConfig struct {
-	Driver string
+	Driver     string
+	DriverOpts map[string]string
 }
 
 func ParseYAML(source []byte, filename string) (*ConfigFile, error) {
@@ -163,10 +175,37 @@ func loadNetworks(value interface{}) (map[string]NetworkConfig, error) {
 
 func loadNetwork(name string, networkDict dict) (*NetworkConfig, error) {
 	network := NetworkConfig{}
-	if driver, ok := networkDict["driver"].(string); ok {
-		network.Driver = driver
+	if driver, ok := networkDict["driver"]; ok {
+		network.Driver = driver.(string)
+	}
+	if driverOpts, ok := networkDict["driver_opts"]; ok {
+		network.DriverOpts = loadStringMappingUnsafe(driverOpts)
+	}
+	if ipam, ok := networkDict["ipam"]; ok {
+		network.IPAM = loadIPAMConfig(ipam.(dict))
 	}
 	return &network, nil
+}
+
+func loadIPAMConfig(ipamDict dict) IPAMConfig {
+	ipamConfig := IPAMConfig{}
+	if driver, ok := ipamDict["driver"]; ok {
+		ipamConfig.Driver = driver.(string)
+	}
+	if config, ok := ipamDict["config"]; ok {
+		for _, poolDef := range config.([]interface{}) {
+			ipamConfig.Config = append(ipamConfig.Config, loadIPAMPool(poolDef.(dict)))
+		}
+	}
+	return ipamConfig
+}
+
+func loadIPAMPool(poolDict dict) IPAMPool {
+	ipamPool := IPAMPool{}
+	if subnet, ok := poolDict["subnet"]; ok {
+		ipamPool.Subnet = subnet.(string)
+	}
+	return ipamPool
 }
 
 func loadVolumes(value interface{}) (map[string]VolumeConfig, error) {
@@ -201,7 +240,19 @@ func loadVolume(name string, volumeDict dict) (*VolumeConfig, error) {
 	if driver, ok := volumeDict["driver"].(string); ok {
 		volume.Driver = driver
 	}
+	if driverOpts, ok := volumeDict["driver_opts"]; ok {
+		volume.DriverOpts = loadStringMappingUnsafe(driverOpts)
+	}
 	return &volume, nil
+}
+
+func loadStringMappingUnsafe(value interface{}) map[string]string {
+	mapping := value.(dict)
+	result := make(map[string]string)
+	for key, item := range mapping {
+		result[key.(string)] = item.(string)
+	}
+	return result
 }
 
 func parseMappingOrList(mappingOrList interface{}, sep, configKey string) (map[string]string, error) {

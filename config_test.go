@@ -98,12 +98,27 @@ var sampleConfig = Config{
 	Networks: map[string]NetworkConfig{
 		"default": NetworkConfig{
 			Driver: "bridge",
+			DriverOpts: map[string]string{
+				"beep": "boop",
+			},
 		},
-		"with_ipam": NetworkConfig{},
+		"with_ipam": NetworkConfig{
+			IPAM: IPAMConfig{
+				Driver: "default",
+				Config: []IPAMPool{
+					IPAMPool{
+						Subnet: "172.28.0.0/16",
+					},
+				},
+			},
+		},
 	},
 	Volumes: map[string]VolumeConfig{
 		"hello": VolumeConfig{
 			Driver: "default",
+			DriverOpts: map[string]string{
+				"beep": "boop",
+			},
 		},
 	},
 }

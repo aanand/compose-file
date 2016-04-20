@@ -212,14 +212,21 @@
           }
         },
         "ipam": {
-            "type": "object",
-            "properties": {
-                "driver": {"type": "string"},
-                "config": {
-                    "type": "array"
-                }
-            },
-            "additionalProperties": false
+          "type": "object",
+          "properties": {
+            "driver": {"type": "string"},
+            "config": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "subnet": {"type": "string"}
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
         },
         "external": {
           "type": ["boolean", "object"],
