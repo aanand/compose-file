@@ -217,6 +217,13 @@ services:
 
 	_, err = loadYAML(`
 version: "2.1"
+services:
+  foo: busybox
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
 networks:
   - default:
       driver: bridge
@@ -225,9 +232,23 @@ networks:
 
 	_, err = loadYAML(`
 version: "2.1"
+networks:
+  default: bridge
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
 volumes:
   - default:
       driver: local
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
+volumes:
+  default: local
 `)
 	assert.NotNil(t, err)
 }

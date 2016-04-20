@@ -123,11 +123,7 @@ func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
 	var services []types.ServiceConfig
 
 	for name, serviceDef := range servicesDict {
-		serviceDict, ok := serviceDef.(types.Dict)
-		if !ok {
-			return nil, fmt.Errorf("services.%s must be a mapping, got: %#v", name, serviceDef)
-		}
-		serviceConfig, err := loadService(name, serviceDict)
+		serviceConfig, err := loadService(name, serviceDef.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
@@ -162,11 +158,7 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 	networks := make(map[string]types.NetworkConfig)
 
 	for name, networkDef := range networksDict {
-		networkDict, ok := networkDef.(types.Dict)
-		if !ok {
-			return nil, fmt.Errorf("networks.%s must be a mapping, got: %#v", name, networkDef)
-		}
-		networkConfig, err := loadNetwork(name, networkDict)
+		networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
@@ -215,11 +207,7 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 	volumes := make(map[string]types.VolumeConfig)
 
 	for name, volumeDef := range volumesDict {
-		volumeDict, ok := volumeDef.(types.Dict)
-		if !ok {
-			return nil, fmt.Errorf("volumes.%s must be a mapping, got: %#v", name, volumeDef)
-		}
-		volumeConfig, err := loadVolume(name, volumeDict)
+		volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
