@@ -26,6 +26,21 @@ services:
     image: busybox
     environment:
       - FOO=1
+volumes:
+  hello:
+    driver: default
+    driver_opts:
+      beep: boop
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      beep: boop
+  with_ipam:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
 `)
 
 var sampleDict = dict{
@@ -37,6 +52,32 @@ var sampleDict = dict{
 		"bar": dict{
 			"image":       "busybox",
 			"environment": []interface{}{"FOO=1"},
+		},
+	},
+	"volumes": dict{
+		"hello": dict{
+			"driver": "default",
+			"driver_opts": dict{
+				"beep": "boop",
+			},
+		},
+	},
+	"networks": dict{
+		"default": dict{
+			"driver": "bridge",
+			"driver_opts": dict{
+				"beep": "boop",
+			},
+		},
+		"with_ipam": dict{
+			"ipam": dict{
+				"driver": "default",
+				"config": []interface{}{
+					dict{
+						"subnet": "172.28.0.0/16",
+					},
+				},
+			},
 		},
 	},
 }
@@ -52,6 +93,17 @@ var sampleConfig = Config{
 			Name:        "bar",
 			Image:       "busybox",
 			Environment: map[string]string{"FOO": "1"},
+		},
+	},
+	Networks: map[string]NetworkConfig{
+		"default": NetworkConfig{
+			Driver: "bridge",
+		},
+		"with_ipam": NetworkConfig{},
+	},
+	Volumes: map[string]VolumeConfig{
+		"hello": VolumeConfig{
+			Driver: "default",
 		},
 	},
 }
@@ -72,6 +124,8 @@ func TestLoad(t *testing.T) {
 	}
 
 	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
+	assert.Equal(t, sampleConfig.Networks, actual.Networks)
+	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
 }
 
 func serviceSort(services []ServiceConfig) []ServiceConfig {
