@@ -1,8 +1,14 @@
-hash: 201770bd17b2c413d387deb0077de424681ac1dde5bbc373b4e645fd3bfca53c
-updated: 2016-04-19T16:48:21.502386885+01:00
+hash: f5435fd9cdd6f63e55c01acec6ad97e8bab1cac0ec676277dee282b7d9b4aaf3
+updated: 2016-04-20T11:12:31.401265825+01:00
 imports:
 - name: github.com/stretchr/testify
   version: c5d7a69bf8a2c9c374798160849c071093e41dd1
+- name: github.com/xeipuuv/gojsonpointer
+  version: e0fe6f68307607d540ed8eac07a342c33fa1b54a
+- name: github.com/xeipuuv/gojsonreference
+  version: e02fc20de94c78484cd5ffb007f8af96be030a45
+- name: github.com/xeipuuv/gojsonschema
+  version: 93e72a773fade158921402d6a24c819b48aba29d
 - name: gopkg.in/yaml.v2
   version: a83829b6f1293c91addabc89d0571c246397bbf4
 devImports: []
