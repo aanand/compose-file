@@ -93,7 +93,7 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 	}
 
 	if environment, ok := serviceDict["environment"]; ok {
-		envMap, err := parseMappingOrList(environment, "=", fmt.Sprintf("services.%s.environment", name))
+		envMap, err := loadMappingOrList(environment, "=", fmt.Sprintf("services.%s.environment", name))
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +212,7 @@ func loadStringMappingUnsafe(value interface{}) map[string]string {
 	return result
 }
 
-func parseMappingOrList(mappingOrList interface{}, sep, configKey string) (map[string]string, error) {
+func loadMappingOrList(mappingOrList interface{}, sep, configKey string) (map[string]string, error) {
 	result := make(map[string]string)
 
 	if mapping, ok := mappingOrList.(types.Dict); ok {
