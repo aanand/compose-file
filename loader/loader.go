@@ -6,6 +6,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/aanand/compose-file/schema"
 	"github.com/aanand/compose-file/types"
 )
 
@@ -27,6 +28,10 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 
 	cfg := types.Config{}
 	file := configDetails.ConfigFiles[0]
+
+	if err := validateAgainstConfigSchema(file); err != nil {
+		return nil, err
+	}
 
 	if services, ok := file.Config["services"]; ok {
 		serviceMapping, err := loadServices(services)
@@ -53,6 +58,56 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func validateAgainstConfigSchema(file types.ConfigFile) error {
+	config, err := validateStringKeys(file.Config)
+	if err != nil {
+		return err
+	}
+	return schema.Validate(config)
+}
+
+func validateStringKeys(config types.Dict) (map[string]interface{}, error) {
+	converted, err := convertToStringKeysRecursive(config)
+	if err != nil {
+		return nil, err
+	}
+	configMap, ok := converted.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Top-level object must be a mapping")
+	}
+	return configMap, nil
+}
+
+func convertToStringKeysRecursive(value interface{}) (interface{}, error) {
+	if dict, ok := value.(types.Dict); ok {
+		convertedDict := make(map[string]interface{})
+		for key, entry := range dict {
+			str, ok := key.(string)
+			if !ok {
+				return nil, fmt.Errorf("Non-string key: %#v", key)
+			}
+			convertedEntry, err := convertToStringKeysRecursive(entry)
+			if err != nil {
+				return nil, err
+			}
+			convertedDict[str] = convertedEntry
+		}
+		return convertedDict, nil
+	} else if list, ok := value.([]interface{}); ok {
+		var convertedList []interface{}
+		for _, entry := range list {
+			convertedEntry, err := convertToStringKeysRecursive(entry)
+			if err != nil {
+				return nil, err
+			}
+			convertedList = append(convertedList, convertedEntry)
+		}
+		return convertedList, nil
+	} else {
+		return value, nil
+	}
 }
 
 func loadServices(value interface{}) ([]types.ServiceConfig, error) {
