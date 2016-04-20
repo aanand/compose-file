@@ -46,7 +46,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	if services, ok := file.Config["services"]; ok {
-		serviceMapping, err := loadServices(services)
+		serviceMapping, err := loadServices(services.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +54,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	if networks, ok := file.Config["networks"]; ok {
-		networkMapping, err := loadNetworks(networks)
+		networkMapping, err := loadNetworks(networks.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	if volumes, ok := file.Config["volumes"]; ok {
-		volumeMapping, err := loadVolumes(volumes)
+		volumeMapping, err := loadVolumes(volumes.(types.Dict))
 		if err != nil {
 			return nil, err
 		}
@@ -119,12 +119,7 @@ func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interfac
 	}
 }
 
-func loadServices(value interface{}) ([]types.ServiceConfig, error) {
-	servicesDict, ok := value.(types.Dict)
-	if !ok {
-		return nil, fmt.Errorf("services must be a mapping")
-	}
-
+func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
 	var services []types.ServiceConfig
 
 	for name, serviceDef := range servicesDict {
@@ -163,12 +158,7 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 	return &service, nil
 }
 
-func loadNetworks(value interface{}) (map[string]types.NetworkConfig, error) {
-	networksDict, ok := value.(types.Dict)
-	if !ok {
-		return nil, fmt.Errorf("networks must be a mapping")
-	}
-
+func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, error) {
 	networks := make(map[string]types.NetworkConfig)
 
 	for name, networkDef := range networksDict {
@@ -221,12 +211,7 @@ func loadIPAMPool(poolDict types.Dict) types.IPAMPool {
 	return ipamPool
 }
 
-func loadVolumes(value interface{}) (map[string]types.VolumeConfig, error) {
-	volumesDict, ok := value.(types.Dict)
-	if !ok {
-		return nil, fmt.Errorf("volumes must be a mapping")
-	}
-
+func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) {
 	volumes := make(map[string]types.VolumeConfig)
 
 	for name, volumeDef := range volumesDict {

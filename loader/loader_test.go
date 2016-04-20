@@ -206,6 +206,32 @@ networks:
 	assert.Contains(t, err.Error(), "Non-string key in networks.default.ipam.config[0]: 123")
 }
 
+func TestNonMappingObject(t *testing.T) {
+	_, err := loadYAML(`
+version: "2.1"
+services:
+  - foo:
+      image: busybox
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
+networks:
+  - default:
+      driver: bridge
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
+volumes:
+  - default:
+      driver: local
+`)
+	assert.NotNil(t, err)
+}
+
 func loadYAML(yaml string) (*types.Config, error) {
 	configFile, err := ParseYAML([]byte(yaml), "filename.yml")
 	if err != nil {
