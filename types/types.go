@@ -1,6 +1,6 @@
 package types
 
-type Dict map[interface{}]interface{}
+type Dict map[string]interface{}
 
 type ConfigFile struct {
 	Filename string

@@ -19,7 +19,7 @@ func buildConfigDetails(source types.Dict) types.ConfigDetails {
 	}
 }
 
-var sampleYAML = []byte(`
+var sampleYAML = `
 version: "2.1"
 services:
   foo:
@@ -43,7 +43,7 @@ networks:
       driver: default
       config:
         - subnet: 172.28.0.0/16
-`)
+`
 
 var sampleDict = types.Dict{
 	"version": "2.1",
@@ -126,7 +126,7 @@ var sampleConfig = types.Config{
 }
 
 func TestParseYAML(t *testing.T) {
-	configFile, err := ParseYAML(sampleYAML, "filename.yml")
+	configFile, err := ParseYAML([]byte(sampleYAML), "filename.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,8 +156,55 @@ func TestParseAndLoad(t *testing.T) {
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
 }
 
-func loadYAML(yaml []byte) (*types.Config, error) {
-	configFile, err := ParseYAML(yaml, "filename.yml")
+func TestInvalidTopLevelObjectType(t *testing.T) {
+	_, err := loadYAML("1")
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
+
+	_, err = loadYAML("\"hello\"")
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
+
+	_, err = loadYAML("[\"hello\"]")
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
+}
+
+func TestNonStringKeys(t *testing.T) {
+	_, err := loadYAML(`
+123:
+  image: busybox
+`)
+	assert.NotNil(t, err)
+
+	_, err = loadYAML(`
+version: "2.1"
+services:
+  foo:
+    image: busybox
+  123:
+    image: busybox
+`)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Non-string key")
+
+	_, err = loadYAML(`
+version: "2.1"
+services:
+  foo:
+    image: busybox
+networks:
+  default:
+    ipam:
+      config:
+        - 123: oh dear
+`)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Non-string key")
+}
+
+func loadYAML(yaml string) (*types.Config, error) {
+	configFile, err := ParseYAML([]byte(yaml), "filename.yml")
 	if err != nil {
 		return nil, err
 	}

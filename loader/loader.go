@@ -11,11 +11,23 @@ import (
 )
 
 func ParseYAML(source []byte, filename string) (*types.ConfigFile, error) {
-	var cfg types.Dict
+	var cfg interface{}
 	if err := yaml.Unmarshal(source, &cfg); err != nil {
 		return nil, err
 	}
-	return &types.ConfigFile{Filename: filename, Config: cfg}, nil
+	cfgMap, ok := cfg.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Top-level object must be a mapping")
+	}
+	converted, err := convertToStringKeysRecursive(cfgMap)
+	if err != nil {
+		return nil, err
+	}
+	configFile := types.ConfigFile{
+		Filename: filename,
+		Config:   converted.(types.Dict),
+	}
+	return &configFile, nil
 }
 
 func Load(configDetails types.ConfigDetails) (*types.Config, error) {
@@ -61,29 +73,13 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 }
 
 func validateAgainstConfigSchema(file types.ConfigFile) error {
-	config, err := validateStringKeys(file.Config)
-	if err != nil {
-		return err
-	}
-	return schema.Validate(config)
-}
-
-func validateStringKeys(config types.Dict) (map[string]interface{}, error) {
-	converted, err := convertToStringKeysRecursive(config)
-	if err != nil {
-		return nil, err
-	}
-	configMap, ok := converted.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("Top-level object must be a mapping")
-	}
-	return configMap, nil
+	return schema.Validate(file.Config)
 }
 
 func convertToStringKeysRecursive(value interface{}) (interface{}, error) {
-	if dict, ok := value.(types.Dict); ok {
-		convertedDict := make(map[string]interface{})
-		for key, entry := range dict {
+	if mapping, ok := value.(map[interface{}]interface{}); ok {
+		dict := make(types.Dict)
+		for key, entry := range mapping {
 			str, ok := key.(string)
 			if !ok {
 				return nil, fmt.Errorf("Non-string key: %#v", key)
@@ -92,9 +88,9 @@ func convertToStringKeysRecursive(value interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			convertedDict[str] = convertedEntry
+			dict[str] = convertedEntry
 		}
-		return convertedDict, nil
+		return dict, nil
 	} else if list, ok := value.([]interface{}); ok {
 		var convertedList []interface{}
 		for _, entry := range list {
@@ -118,11 +114,7 @@ func loadServices(value interface{}) ([]types.ServiceConfig, error) {
 
 	var services []types.ServiceConfig
 
-	for key, serviceDef := range servicesDict {
-		name, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("services contains a non-string key (%#v)", key)
-		}
+	for name, serviceDef := range servicesDict {
 		serviceDict, ok := serviceDef.(types.Dict)
 		if !ok {
 			return nil, fmt.Errorf("services.%s must be a mapping, got: %#v", name, serviceDef)
@@ -166,11 +158,7 @@ func loadNetworks(value interface{}) (map[string]types.NetworkConfig, error) {
 
 	networks := make(map[string]types.NetworkConfig)
 
-	for key, networkDef := range networksDict {
-		name, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("networks contains a non-string key (%#v)", key)
-		}
+	for name, networkDef := range networksDict {
 		networkDict, ok := networkDef.(types.Dict)
 		if !ok {
 			return nil, fmt.Errorf("networks.%s must be a mapping, got: %#v", name, networkDef)
@@ -228,11 +216,7 @@ func loadVolumes(value interface{}) (map[string]types.VolumeConfig, error) {
 
 	volumes := make(map[string]types.VolumeConfig)
 
-	for key, volumeDef := range volumesDict {
-		name, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("volumes contains a non-string key (%#v)", key)
-		}
+	for name, volumeDef := range volumesDict {
 		volumeDict, ok := volumeDef.(types.Dict)
 		if !ok {
 			return nil, fmt.Errorf("volumes.%s must be a mapping, got: %#v", name, volumeDef)
@@ -261,8 +245,8 @@ func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error)
 func loadStringMappingUnsafe(value interface{}) map[string]string {
 	mapping := value.(types.Dict)
 	result := make(map[string]string)
-	for key, item := range mapping {
-		result[key.(string)] = item.(string)
+	for name, item := range mapping {
+		result[name] = item.(string)
 	}
 	return result
 }
@@ -271,11 +255,7 @@ func loadMappingOrList(mappingOrList interface{}, sep, configKey string) (map[st
 	result := make(map[string]string)
 
 	if mapping, ok := mappingOrList.(types.Dict); ok {
-		for key, value := range mapping {
-			name, ok := key.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s contains a non-string key (%#v)", configKey, key)
-			}
+		for name, value := range mapping {
 			if str, ok := value.(string); ok {
 				result[name] = str
 			} else {
