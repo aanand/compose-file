@@ -142,7 +142,7 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 	}
 
 	if environment, ok := serviceDict["environment"]; ok {
-		service.Environment = loadMappingOrListUnsafe(environment, "=")
+		service.Environment = loadMappingOrList(environment, "=")
 	}
 
 	return &service, nil
@@ -168,7 +168,7 @@ func loadNetwork(name string, networkDict types.Dict) (*types.NetworkConfig, err
 		network.Driver = driver.(string)
 	}
 	if driverOpts, ok := networkDict["driver_opts"]; ok {
-		network.DriverOpts = loadStringMappingUnsafe(driverOpts)
+		network.DriverOpts = loadStringMapping(driverOpts)
 	}
 	if ipam, ok := networkDict["ipam"]; ok {
 		network.IPAM = loadIPAMConfig(ipam.(types.Dict))
@@ -217,12 +217,12 @@ func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error)
 		volume.Driver = driver
 	}
 	if driverOpts, ok := volumeDict["driver_opts"]; ok {
-		volume.DriverOpts = loadStringMappingUnsafe(driverOpts)
+		volume.DriverOpts = loadStringMapping(driverOpts)
 	}
 	return &volume, nil
 }
 
-func loadStringMappingUnsafe(value interface{}) map[string]string {
+func loadStringMapping(value interface{}) map[string]string {
 	mapping := value.(types.Dict)
 	result := make(map[string]string)
 	for name, item := range mapping {
@@ -231,7 +231,7 @@ func loadStringMappingUnsafe(value interface{}) map[string]string {
 	return result
 }
 
-func loadMappingOrListUnsafe(mappingOrList interface{}, sep string) map[string]string {
+func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string {
 	result := make(map[string]string)
 
 	if mapping, ok := mappingOrList.(types.Dict); ok {
