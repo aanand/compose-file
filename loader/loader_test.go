@@ -127,19 +127,13 @@ var sampleConfig = types.Config{
 
 func TestParseYAML(t *testing.T) {
 	configFile, err := ParseYAML([]byte(sampleYAML), "filename.yml")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	assert.NoError(t, err)
 	assert.Equal(t, sampleDict, configFile.Config)
 }
 
 func TestLoad(t *testing.T) {
 	actual, err := Load(buildConfigDetails(sampleDict))
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	assert.NoError(t, err)
 	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
 	assert.Equal(t, sampleConfig.Networks, actual.Networks)
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
@@ -147,10 +141,7 @@ func TestLoad(t *testing.T) {
 
 func TestParseAndLoad(t *testing.T) {
 	actual, err := loadYAML(sampleYAML)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	assert.NoError(t, err)
 	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
 	assert.Equal(t, sampleConfig.Networks, actual.Networks)
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
@@ -158,15 +149,15 @@ func TestParseAndLoad(t *testing.T) {
 
 func TestInvalidTopLevelObjectType(t *testing.T) {
 	_, err := loadYAML("1")
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
 
 	_, err = loadYAML("\"hello\"")
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
 
 	_, err = loadYAML("[\"hello\"]")
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Top-level object must be a mapping")
 }
 
@@ -177,7 +168,7 @@ version: "2.1"
   foo:
     image: busybox
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Non-string key at top level: 123")
 
 	_, err = loadYAML(`
@@ -188,7 +179,7 @@ services:
   123:
     image: busybox
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Non-string key in services: 123")
 
 	_, err = loadYAML(`
@@ -202,7 +193,7 @@ networks:
       config:
         - 123: oh dear
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Non-string key in networks.default.ipam.config[0]: 123")
 }
 
@@ -213,14 +204,14 @@ services:
   - foo:
       image: busybox
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	_, err = loadYAML(`
 version: "2.1"
 services:
   foo: busybox
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	_, err = loadYAML(`
 version: "2.1"
@@ -228,14 +219,14 @@ networks:
   - default:
       driver: bridge
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	_, err = loadYAML(`
 version: "2.1"
 networks:
   default: bridge
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	_, err = loadYAML(`
 version: "2.1"
@@ -243,14 +234,14 @@ volumes:
   - default:
       driver: local
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	_, err = loadYAML(`
 version: "2.1"
 volumes:
   default: local
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestNonStringImage(t *testing.T) {
@@ -260,7 +251,7 @@ services:
   foo:
     image: ["busybox", "latest"]
 `)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestValidEnvironment(t *testing.T) {

@@ -18,7 +18,7 @@ func TestValid(t *testing.T) {
 		},
 	}
 
-	assert.Nil(t, Validate(config))
+	assert.NoError(t, Validate(config))
 }
 
 func TestUndefinedTopLevelOption(t *testing.T) {
@@ -31,5 +31,5 @@ func TestUndefinedTopLevelOption(t *testing.T) {
 		},
 	}
 
-	assert.NotNil(t, Validate(config))
+	assert.Error(t, Validate(config))
 }
