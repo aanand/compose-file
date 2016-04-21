@@ -137,18 +137,12 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 	service := types.ServiceConfig{}
 	service.Name = name
 
-	if image, ok := serviceDict["image"].(string); ok {
-		service.Image = image
-	} else {
-		return nil, fmt.Errorf("services.%s.image must be a string, got: %#v", serviceDict["image"])
+	if image, ok := serviceDict["image"]; ok {
+		service.Image = image.(string)
 	}
 
 	if environment, ok := serviceDict["environment"]; ok {
-		envMap, err := loadMappingOrList(environment, "=", fmt.Sprintf("services.%s.environment", name))
-		if err != nil {
-			return nil, err
-		}
-		service.Environment = envMap
+		service.Environment = loadMappingOrListUnsafe(environment, "=")
 	}
 
 	return &service, nil
@@ -237,33 +231,29 @@ func loadStringMappingUnsafe(value interface{}) map[string]string {
 	return result
 }
 
-func loadMappingOrList(mappingOrList interface{}, sep, configKey string) (map[string]string, error) {
+func loadMappingOrListUnsafe(mappingOrList interface{}, sep string) map[string]string {
 	result := make(map[string]string)
 
 	if mapping, ok := mappingOrList.(types.Dict); ok {
 		for name, value := range mapping {
-			if str, ok := value.(string); ok {
-				result[name] = str
+			if value == nil {
+				result[name] = ""
 			} else {
-				return nil, fmt.Errorf("%s.%s has non-string value: %#v", configKey, name, value)
+				result[name] = fmt.Sprint(value)
 			}
 		}
 	} else if list, ok := mappingOrList.([]interface{}); ok {
 		for _, value := range list {
-			if str, ok := value.(string); ok {
-				parts := strings.SplitN(str, sep, 2)
-				if len(parts) == 1 {
-					result[parts[0]] = ""
-				} else {
-					result[parts[0]] = parts[1]
-				}
+			parts := strings.SplitN(value.(string), sep, 2)
+			if len(parts) == 1 {
+				result[parts[0]] = ""
 			} else {
-				return nil, fmt.Errorf("%s has a non-string item: %#v", configKey, value)
+				result[parts[0]] = parts[1]
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("%s must be a mapping or a list, got: %#v", configKey, mappingOrList)
+		panic(fmt.Errorf("expected a map or a slice, got: %#v", mappingOrList))
 	}
 
-	return result, nil
+	return result
 }

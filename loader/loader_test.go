@@ -253,6 +253,86 @@ volumes:
 	assert.NotNil(t, err)
 }
 
+func TestNonStringImage(t *testing.T) {
+	_, err := loadYAML(`
+version: "2.1"
+services:
+  foo:
+    image: ["busybox", "latest"]
+`)
+	assert.NotNil(t, err)
+}
+
+func TestValidEnvironment(t *testing.T) {
+	config, err := loadYAML(`
+version: "2.1"
+services:
+  dict-env:
+    image: busybox
+    environment:
+      FOO: "1"
+      BAR: 2
+      BAZ: 2.5
+      QUUX:
+  list-env:
+    image: busybox
+    environment:
+      - FOO=1
+      - BAR=2
+      - BAZ=2.5
+      - QUUX=
+`)
+	assert.NoError(t, err)
+
+	expected := map[string]string{
+		"FOO":  "1",
+		"BAR":  "2",
+		"BAZ":  "2.5",
+		"QUUX": "",
+	}
+
+	assert.Equal(t, 2, len(config.Services))
+
+	for _, service := range config.Services {
+		assert.Equal(t, expected, service.Environment)
+	}
+}
+
+func TestInvalidEnvironmentKey(t *testing.T) {
+	_, err := loadYAML(`
+version: "2.1"
+services:
+  dict-env:
+    image: busybox
+    environment:
+      1: FOO
+`)
+	assert.Error(t, err)
+}
+
+func TestInvalidEnvironmentValue(t *testing.T) {
+	_, err := loadYAML(`
+version: "2.1"
+services:
+  dict-env:
+    image: busybox
+    environment:
+      FOO: ["1"]
+`)
+	assert.Error(t, err)
+}
+
+func TestInvalidEnvironmentObject(t *testing.T) {
+	_, err := loadYAML(`
+version: "2.1"
+services:
+  dict-env:
+    image: busybox
+    environment: "FOO=1"
+`)
+	assert.Error(t, err)
+}
+
 func loadYAML(yaml string) (*types.Config, error) {
 	configFile, err := ParseYAML([]byte(yaml), "filename.yml")
 	if err != nil {
