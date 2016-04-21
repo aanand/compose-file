@@ -197,6 +197,44 @@ networks:
 	assert.Contains(t, err.Error(), "Non-string key in networks.default.ipam.config[0]: 123")
 }
 
+func TestUnsupportedVersion(t *testing.T) {
+	_, err := loadYAML(`
+version: "2"
+services:
+  foo:
+    image: busybox
+`)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "version")
+
+	_, err = loadYAML(`
+version: "2.0"
+services:
+  foo:
+    image: busybox
+`)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "version")
+}
+
+func TestInvalidVersion(t *testing.T) {
+	_, err := loadYAML(`
+version: 2.1
+services:
+  foo:
+    image: busybox
+`)
+	assert.Error(t, err)
+}
+
+func TestV1Unsupported(t *testing.T) {
+	_, err := loadYAML(`
+foo:
+  image: busybox
+`)
+	assert.Error(t, err)
+}
+
 func TestNonMappingObject(t *testing.T) {
 	_, err := loadYAML(`
 version: "2.1"

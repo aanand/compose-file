@@ -45,6 +45,11 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		return nil, err
 	}
 
+	version := file.Config["version"].(string)
+	if version != "2.1" {
+		return nil, fmt.Errorf("Unsupported version: %#v. The only supported version is 2.1", version)
+	}
+
 	if services, ok := file.Config["services"]; ok {
 		serviceMapping, err := loadServices(services.(types.Dict))
 		if err != nil {
