@@ -4,6 +4,7 @@ package schema
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -34,8 +35,68 @@ func Validate(config map[string]interface{}) error {
 	}
 
 	if !result.Valid() {
-		return fmt.Errorf("config is invalid: %#v", result.Errors())
+		return toError(result)
 	}
 
 	return nil
+}
+
+func toError(result *gojsonschema.Result) error {
+	err := getMostSpecificError(result.Errors())
+	description := getDescription(err)
+	return fmt.Errorf("%s %s", err.Field(), description)
+}
+
+func getDescription(err gojsonschema.ResultError) string {
+	if err.Type() == "invalid_type" {
+		if expectedType, ok := err.Details()["expected"].(string); ok {
+			return fmt.Sprintf("must be a %s", humanReadableType(expectedType))
+		}
+	}
+
+	return err.Description()
+}
+
+func humanReadableType(definition string) string {
+	if definition[0:1] == "[" {
+		allTypes := strings.Split(definition[1:len(definition)-1], ",")
+		for i, t := range allTypes {
+			allTypes[i] = humanReadableType(t)
+		}
+		return fmt.Sprintf(
+			"%s or %s",
+			strings.Join(allTypes[0:len(allTypes)-1], ", "),
+			allTypes[len(allTypes)-1],
+		)
+	}
+	if definition == "object" {
+		return "mapping"
+	}
+	if definition == "array" {
+		return "list"
+	}
+	return definition
+}
+
+func getMostSpecificError(errors []gojsonschema.ResultError) gojsonschema.ResultError {
+	var mostSpecificError gojsonschema.ResultError
+
+	for _, err := range errors {
+		if mostSpecificError == nil {
+			mostSpecificError = err
+		} else if specificity(err) > specificity(mostSpecificError) {
+			mostSpecificError = err
+		} else if specificity(err) == specificity(mostSpecificError) {
+			// Invalid type errors win in a tie-breaker for most specific field name
+			if err.Type() == "invalid_type" && mostSpecificError.Type() != "invalid_type" {
+				mostSpecificError = err
+			}
+		}
+	}
+
+	return mostSpecificError
+}
+
+func specificity(err gojsonschema.ResultError) int {
+	return len(strings.Split(err.Field(), "."))
 }
