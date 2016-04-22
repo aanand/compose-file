@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"io/ioutil"
 	"sort"
 	"testing"
 
@@ -369,6 +370,29 @@ services:
 `)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "services.dict-env.environment must be a mapping")
+}
+
+func TestFullExample(t *testing.T) {
+	bytes, err := ioutil.ReadFile("full-example.yml")
+	assert.NoError(t, err)
+
+	config, err := loadYAML(string(bytes))
+	assert.NoError(t, err)
+
+	expectedServiceConfig := types.ServiceConfig{
+		Name: "foo",
+
+		CapAdd:  []string{"ALL"},
+		CapDrop: []string{"NET_ADMIN", "SYS_ADMIN"},
+		Image:   "redis",
+		Environment: map[string]string{
+			"RACK_ENV":       "development",
+			"SHOW":           "true",
+			"SESSION_SECRET": "",
+		},
+	}
+
+	assert.Equal(t, []types.ServiceConfig{expectedServiceConfig}, config.Services)
 }
 
 func loadYAML(yaml string) (*types.Config, error) {

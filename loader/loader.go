@@ -157,11 +157,15 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 	networks := make(map[string]types.NetworkConfig)
 
 	for name, networkDef := range networksDict {
-		networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
-		if err != nil {
-			return nil, err
+		if networkDef == nil {
+			networks[name] = types.NetworkConfig{}
+		} else {
+			networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
+			if err != nil {
+				return nil, err
+			}
+			networks[name] = *networkConfig
 		}
-		networks[name] = *networkConfig
 	}
 
 	return networks, nil
@@ -206,11 +210,15 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 	volumes := make(map[string]types.VolumeConfig)
 
 	for name, volumeDef := range volumesDict {
-		volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
-		if err != nil {
-			return nil, err
+		if volumeDef == nil {
+			volumes[name] = types.VolumeConfig{}
+		} else {
+			volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
+			if err != nil {
+				return nil, err
+			}
+			volumes[name] = *volumeConfig
 		}
-		volumes[name] = *volumeConfig
 	}
 
 	return volumes, nil
@@ -231,7 +239,7 @@ func loadStringMapping(value interface{}) map[string]string {
 	mapping := value.(types.Dict)
 	result := make(map[string]string)
 	for name, item := range mapping {
-		result[name] = item.(string)
+		result[name] = toString(item)
 	}
 	return result
 }
@@ -241,11 +249,7 @@ func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string 
 
 	if mapping, ok := mappingOrList.(types.Dict); ok {
 		for name, value := range mapping {
-			if value == nil {
-				result[name] = ""
-			} else {
-				result[name] = fmt.Sprint(value)
-			}
+			result[name] = toString(value)
 		}
 	} else if list, ok := mappingOrList.([]interface{}); ok {
 		for _, value := range list {
@@ -261,4 +265,12 @@ func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string 
 	}
 
 	return result
+}
+
+func toString(value interface{}) string {
+	if value == nil {
+		return ""
+	} else {
+		return fmt.Sprint(value)
+	}
 }
