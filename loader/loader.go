@@ -2,6 +2,8 @@ package loader
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -9,6 +11,16 @@ import (
 	"github.com/aanand/compose-file/schema"
 	"github.com/aanand/compose-file/types"
 )
+
+var fieldNameRegexp *regexp.Regexp
+
+func init() {
+	r, err := regexp.Compile("[[:upper:]][[:lower:]]+")
+	if err != nil {
+		panic(err)
+	}
+	fieldNameRegexp = r
+}
 
 func ParseYAML(source []byte, filename string) (*types.ConfigFile, error) {
 	var cfg interface{}
@@ -139,18 +151,42 @@ func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
 }
 
 func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, error) {
-	service := types.ServiceConfig{}
-	service.Name = name
+	serviceType := reflect.TypeOf(types.ServiceConfig{})
+	serviceValue := reflect.New(serviceType).Elem()
+	serviceValue.FieldByName("Name").SetString(name)
 
-	if image, ok := serviceDict["image"]; ok {
-		service.Image = image.(string)
+	for i := 0; i < serviceType.NumField(); i++ {
+		field := serviceType.Field(i)
+		fieldValue := serviceValue.FieldByIndex([]int{i})
+		fieldTag := field.Tag.Get("compose")
+
+		yamlName := toYAMLName(field.Name)
+		value, ok := serviceDict[yamlName]
+		if !ok {
+			continue
+		}
+
+		if fieldTag == "list_or_dict_equals" {
+			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
+		} else if fieldTag != "" {
+			fmt.Printf("skipping %s - unrecognised tag %s\n", yamlName, fieldTag)
+		}
+
+		if field.Type.Kind() == reflect.String {
+			fieldValue.SetString(value.(string))
+		}
 	}
 
-	if environment, ok := serviceDict["environment"]; ok {
-		service.Environment = loadMappingOrList(environment, "=")
-	}
+	serviceConfig := serviceValue.Interface().(types.ServiceConfig)
+	return &serviceConfig, nil
+}
 
-	return &service, nil
+func toYAMLName(name string) string {
+	nameParts := fieldNameRegexp.FindAllString(name, -1)
+	for i, p := range nameParts {
+		nameParts[i] = strings.ToLower(p)
+	}
+	return strings.Join(nameParts, "_")
 }
 
 func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, error) {

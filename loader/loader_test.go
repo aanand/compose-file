@@ -382,14 +382,28 @@ func TestFullExample(t *testing.T) {
 	expectedServiceConfig := types.ServiceConfig{
 		Name: "foo",
 
-		CapAdd:  []string{"ALL"},
-		CapDrop: []string{"NET_ADMIN", "SYS_ADMIN"},
-		Image:   "redis",
+		CgroupParent:  "m-executor-abcd",
+		ContainerName: "my-web-container",
 		Environment: map[string]string{
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
 			"SESSION_SECRET": "",
 		},
+		Hostname: "foo",
+		Image:    "redis",
+		Ipc:      "host",
+		Labels: map[string]string{
+			"com.example.description": "Accounting webapp",
+			"com.example.number":      "42",
+			"com.example.empty-label": "",
+		},
+		MacAddress:   "02:42:ac:11:65:43",
+		NetworkMode:  "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
+		Pid:          "host",
+		StopSignal:   "SIGUSR1",
+		User:         "someone",
+		VolumeDriver: "mydriver",
+		WorkingDir:   "/code",
 	}
 
 	assert.Equal(t, []types.ServiceConfig{expectedServiceConfig}, config.Services)
