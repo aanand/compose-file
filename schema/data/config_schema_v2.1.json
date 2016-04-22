@@ -185,7 +185,7 @@
 
     "network": {
       "id": "#/definitions/network",
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "driver": {"type": "string"},
         "driver_opts": {
