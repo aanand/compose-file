@@ -123,14 +123,14 @@ services:
     memswap_limit: 2G
     # memswap_limit: 2147483648
 
-    network_mode: "bridge"
+    # network_mode: "bridge"
     # network_mode: "host"
     # network_mode: "none"
     # Use the network mode of an arbitrary container from another service
     # network_mode: "service:db"
     # Use the network mode of another container, specified by name or id
     # network_mode: "container:some-container"
-    # network_mode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b"
+    network_mode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b"
 
     networks:
       some-network:
