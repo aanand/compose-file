@@ -430,7 +430,19 @@ func TestFullExample(t *testing.T) {
 		MemLimit:     1073741824,
 		MemswapLimit: 2147483648,
 		NetworkMode:  "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
-		Pid:          "host",
+		Networks: map[string]*types.ServiceNetworkConfig{
+			"some-network": &types.ServiceNetworkConfig{
+				Aliases:     []string{"alias1", "alias3"},
+				Ipv4Address: "",
+				Ipv6Address: "",
+			},
+			"other-network": &types.ServiceNetworkConfig{
+				Aliases:     nil,
+				Ipv4Address: "172.16.238.10",
+				Ipv6Address: "2001:3984:3989::10",
+			},
+		},
+		Pid: "host",
 		Ports: []string{
 			"3000",
 			"3000-3005",

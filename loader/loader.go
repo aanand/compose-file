@@ -17,7 +17,7 @@ import (
 var fieldNameRegexp *regexp.Regexp
 
 func init() {
-	r, err := regexp.Compile("[[:upper:]][[:lower:]]+")
+	r, err := regexp.Compile("[A-Z][a-z0-9]+")
 	if err != nil {
 		panic(err)
 	}
@@ -236,6 +236,10 @@ func loadStruct(dict types.Dict, dest interface{}) error {
 			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
 		} else if fieldTag == "list_or_dict_colon" {
 			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, ":")))
+		} else if fieldTag == "list_or_struct_map" {
+			if err := loadListOrStructMap(value, fieldValue); err != nil {
+				return err
+			}
 		} else if fieldTag == "string_or_list" {
 			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
 		} else if fieldTag == "list_of_strings_or_numbers" {
@@ -316,6 +320,28 @@ func loadListOfStructs(value interface{}, dest reflect.Value) error {
 		result = reflect.Append(result, itemStruct)
 	}
 	dest.Set(result)
+	return nil
+}
+
+func loadListOrStructMap(value interface{}, dest reflect.Value) error {
+	mapValue := reflect.MakeMap(dest.Type())
+
+	if list, ok := value.([]interface{}); ok {
+		for _, name := range list {
+			mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(nil))
+		}
+	} else {
+		for name, item := range value.(types.Dict) {
+			itemStruct := reflect.New(dest.Type().Elem().Elem())
+			if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
+				return err
+			}
+			mapValue.SetMapIndex(reflect.ValueOf(name), itemStruct)
+		}
+	}
+
+	dest.Set(mapValue)
+
 	return nil
 }
 

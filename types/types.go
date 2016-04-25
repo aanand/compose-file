@@ -47,18 +47,18 @@ type ServiceConfig struct {
 	MemLimit      int `compose:"size"`
 	MemswapLimit  int `compose:"size"`
 	NetworkMode   string
-	// Networks      map[string]ServiceNetworkConfig
-	Pid         string
-	Ports       []string `compose:"list_of_strings_or_numbers"`
-	Privileged  bool
-	ReadOnly    bool
-	Restart     string
-	SecurityOpt []string
-	ShmSize     int `compose:"size"`
-	StdinOpen   bool
-	StopSignal  string
-	Tmpfs       []string `compose:"string_or_list"`
-	Tty         bool
+	Networks      map[string]*ServiceNetworkConfig `compose:"list_or_struct_map"`
+	Pid           string
+	Ports         []string `compose:"list_of_strings_or_numbers"`
+	Privileged    bool
+	ReadOnly      bool
+	Restart       string
+	SecurityOpt   []string
+	ShmSize       int `compose:"size"`
+	StdinOpen     bool
+	StopSignal    string
+	Tmpfs         []string `compose:"string_or_list"`
+	Tty           bool
 	// Ulimits       map[string]ULimitsConfig
 	User         string
 	Volumes      []string
@@ -69,6 +69,12 @@ type ServiceConfig struct {
 type LoggingConfig struct {
 	Driver  string
 	Options map[string]string
+}
+
+type ServiceNetworkConfig struct {
+	Aliases     []string
+	Ipv4Address string
+	Ipv6Address string
 }
 
 type NetworkConfig struct {
