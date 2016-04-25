@@ -161,68 +161,6 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 	return serviceConfig, nil
 }
 
-func loadStruct(dict types.Dict, dest interface{}) error {
-	structValue := reflect.ValueOf(dest).Elem()
-	structType := structValue.Type()
-
-	for i := 0; i < structType.NumField(); i++ {
-		field := structType.Field(i)
-		fieldValue := structValue.FieldByIndex([]int{i})
-		fieldTag := field.Tag.Get("compose")
-
-		yamlName := toYAMLName(field.Name)
-		value, ok := dict[yamlName]
-		if !ok {
-			continue
-		}
-
-		fmt.Println(yamlName)
-
-		if fieldTag == "list_or_dict_equals" {
-			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
-		} else if fieldTag == "list_or_dict_colon" {
-			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, ":")))
-		} else if fieldTag == "string_or_list" {
-			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
-		} else if fieldTag == "list_of_strings_or_numbers" {
-			fieldValue.Set(reflect.ValueOf(loadListOfStringsOrNumbers(value)))
-		} else if fieldTag == "shell_command" {
-			command, err := loadShellCommand(value)
-			if err != nil {
-				return err
-			}
-			fieldValue.Set(reflect.ValueOf(command))
-		} else if fieldTag == "size" {
-			size, err := loadSize(value)
-			if err != nil {
-				return err
-			}
-			fieldValue.SetInt(size)
-		} else if fieldTag != "" {
-			panic(fmt.Sprintf("Unrecognised field tag on %s: %s\n", field.Name, fieldTag))
-		} else if field.Type.Kind() == reflect.String {
-			fieldValue.SetString(value.(string))
-		} else if field.Type.Kind() == reflect.Bool {
-			fieldValue.SetBool(value.(bool))
-		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
-			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
-		} else {
-			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %s",
-				field.Name, yamlName, field.Type.Name()))
-		}
-	}
-
-	return nil
-}
-
-func toYAMLName(name string) string {
-	nameParts := fieldNameRegexp.FindAllString(name, -1)
-	for i, p := range nameParts {
-		nameParts[i] = strings.ToLower(p)
-	}
-	return strings.Join(nameParts, "_")
-}
-
 func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, error) {
 	networks := make(map[string]types.NetworkConfig)
 
@@ -303,6 +241,68 @@ func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error)
 		volume.DriverOpts = loadStringMapping(driverOpts)
 	}
 	return &volume, nil
+}
+
+func loadStruct(dict types.Dict, dest interface{}) error {
+	structValue := reflect.ValueOf(dest).Elem()
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		fieldValue := structValue.FieldByIndex([]int{i})
+		fieldTag := field.Tag.Get("compose")
+
+		yamlName := toYAMLName(field.Name)
+		value, ok := dict[yamlName]
+		if !ok {
+			continue
+		}
+
+		fmt.Println(yamlName)
+
+		if fieldTag == "list_or_dict_equals" {
+			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
+		} else if fieldTag == "list_or_dict_colon" {
+			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, ":")))
+		} else if fieldTag == "string_or_list" {
+			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
+		} else if fieldTag == "list_of_strings_or_numbers" {
+			fieldValue.Set(reflect.ValueOf(loadListOfStringsOrNumbers(value)))
+		} else if fieldTag == "shell_command" {
+			command, err := loadShellCommand(value)
+			if err != nil {
+				return err
+			}
+			fieldValue.Set(reflect.ValueOf(command))
+		} else if fieldTag == "size" {
+			size, err := loadSize(value)
+			if err != nil {
+				return err
+			}
+			fieldValue.SetInt(size)
+		} else if fieldTag != "" {
+			panic(fmt.Sprintf("Unrecognised field tag on %s: %s\n", field.Name, fieldTag))
+		} else if field.Type.Kind() == reflect.String {
+			fieldValue.SetString(value.(string))
+		} else if field.Type.Kind() == reflect.Bool {
+			fieldValue.SetBool(value.(bool))
+		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
+			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
+		} else {
+			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %s",
+				field.Name, yamlName, field.Type.Name()))
+		}
+	}
+
+	return nil
+}
+
+func toYAMLName(name string) string {
+	nameParts := fieldNameRegexp.FindAllString(name, -1)
+	for i, p := range nameParts {
+		nameParts[i] = strings.ToLower(p)
+	}
+	return strings.Join(nameParts, "_")
 }
 
 func loadStringMapping(value interface{}) map[string]string {
