@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	units "github.com/docker/go-units"
 	shellwords "github.com/mattn/go-shellwords"
 	yaml "gopkg.in/yaml.v2"
 
@@ -171,6 +172,8 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 
 		if fieldTag == "list_or_dict_equals" {
 			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
+		} else if fieldTag == "list_or_dict_colon" {
+			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, ":")))
 		} else if fieldTag == "string_or_list" {
 			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
 		} else if fieldTag == "list_of_strings_or_numbers" {
@@ -181,12 +184,23 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 				return nil, err
 			}
 			fieldValue.Set(reflect.ValueOf(command))
+		} else if fieldTag == "size" {
+			size, err := loadSize(value)
+			if err != nil {
+				return nil, err
+			}
+			fieldValue.SetInt(size)
 		} else if fieldTag != "" {
-			fmt.Printf("skipping %s - unrecognised tag %s\n", yamlName, fieldTag)
+			panic(fmt.Sprintf("Unrecognised field tag on %s: %s\n", field.Name, fieldTag))
 		} else if field.Type.Kind() == reflect.String {
 			fieldValue.SetString(value.(string))
+		} else if field.Type.Kind() == reflect.Bool {
+			fieldValue.SetBool(value.(bool))
 		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
 			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
+		} else {
+			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %s",
+				field.Name, yamlName, field.Type.Name()))
 		}
 	}
 
@@ -347,6 +361,14 @@ func loadShellCommand(value interface{}) ([]string, error) {
 		return shellwords.Parse(str)
 	} else {
 		return loadListOfStrings(value), nil
+	}
+}
+
+func loadSize(value interface{}) (int64, error) {
+	if size, ok := value.(int); ok {
+		return int64(size), nil
+	} else {
+		return units.RAMInBytes(value.(string))
 	}
 }
 

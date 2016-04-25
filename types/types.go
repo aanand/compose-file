@@ -48,17 +48,17 @@ type ServiceConfig struct {
 	MemswapLimit int `compose:"size"`
 	NetworkMode  string
 	// Networks      map[string]ServiceNetworkConfig
-	Pid           string
-	Ports         []string `compose:"list_of_strings_or_numbers"`
-	Privileged    bool
-	ReadOnly      bool
-	RestartPolicy string
-	SecurityOpt   []string
-	SHMSize       int
-	StdinOpen     bool
-	StopSignal    string
-	Tmpfs         []string `compose:"string_or_list"`
-	Tty           bool
+	Pid         string
+	Ports       []string `compose:"list_of_strings_or_numbers"`
+	Privileged  bool
+	ReadOnly    bool
+	Restart     string
+	SecurityOpt []string
+	ShmSize     int `compose:"size"`
+	StdinOpen   bool
+	StopSignal  string
+	Tmpfs       []string `compose:"string_or_list"`
+	Tty         bool
 	// Ulimits       map[string]ULimitsConfig
 	User         string
 	Volumes      []string
