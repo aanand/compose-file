@@ -359,8 +359,10 @@ func loadListOrStructMap(value interface{}, dest reflect.Value) error {
 	} else {
 		for name, item := range value.(types.Dict) {
 			itemStruct := reflect.New(dest.Type().Elem().Elem())
-			if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
-				return err
+			if item != nil {
+				if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
+					return err
+				}
 			}
 			mapValue.SetMapIndex(reflect.ValueOf(name), itemStruct)
 		}

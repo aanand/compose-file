@@ -441,6 +441,7 @@ func TestFullExample(t *testing.T) {
 				Ipv4Address: "172.16.238.10",
 				Ipv6Address: "2001:3984:3989::10",
 			},
+			"other-other-network": &types.ServiceNetworkConfig{},
 		},
 		Pid: "host",
 		Ports: []string{
