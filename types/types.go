@@ -30,7 +30,7 @@ type ServiceConfig struct {
 	DependsOn     []string
 	Devices       []string
 	Dns           []string `compose:"string_or_list"`
-	DnsSearch     []string
+	DnsSearch     []string `compose:"string_or_list"`
 	DomainName    string
 	Entrypoint    []string          `compose:"shell_command"`
 	Environment   map[string]string `compose:"list_or_dict_equals"`
