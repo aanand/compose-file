@@ -106,10 +106,10 @@ var sampleConfig = types.Config{
 			},
 		},
 		"with_ipam": types.NetworkConfig{
-			IPAM: types.IPAMConfig{
+			Ipam: types.IPAMConfig{
 				Driver: "default",
-				Config: []types.IPAMPool{
-					types.IPAMPool{
+				Config: []*types.IPAMPool{
+					&types.IPAMPool{
 						Subnet: "172.28.0.0/16",
 					},
 				},

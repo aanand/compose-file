@@ -69,12 +69,12 @@ type ServiceConfig struct {
 type NetworkConfig struct {
 	Driver     string
 	DriverOpts map[string]string
-	IPAM       IPAMConfig
+	Ipam       IPAMConfig
 }
 
 type IPAMConfig struct {
 	Driver string
-	Config []IPAMPool
+	Config []*IPAMPool
 }
 
 type IPAMPool struct {

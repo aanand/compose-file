@@ -168,7 +168,7 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 		if networkDef == nil {
 			networks[name] = types.NetworkConfig{}
 		} else {
-			networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
+			networkConfig, err := loadNetwork(networkDef.(types.Dict))
 			if err != nil {
 				return nil, err
 			}
@@ -179,39 +179,12 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 	return networks, nil
 }
 
-func loadNetwork(name string, networkDict types.Dict) (*types.NetworkConfig, error) {
-	network := types.NetworkConfig{}
-	if driver, ok := networkDict["driver"]; ok {
-		network.Driver = driver.(string)
+func loadNetwork(networkDict types.Dict) (*types.NetworkConfig, error) {
+	network := &types.NetworkConfig{}
+	if err := loadStruct(networkDict, network); err != nil {
+		return nil, err
 	}
-	if driverOpts, ok := networkDict["driver_opts"]; ok {
-		network.DriverOpts = loadStringMapping(driverOpts)
-	}
-	if ipam, ok := networkDict["ipam"]; ok {
-		network.IPAM = loadIPAMConfig(ipam.(types.Dict))
-	}
-	return &network, nil
-}
-
-func loadIPAMConfig(ipamDict types.Dict) types.IPAMConfig {
-	ipamConfig := types.IPAMConfig{}
-	if driver, ok := ipamDict["driver"]; ok {
-		ipamConfig.Driver = driver.(string)
-	}
-	if config, ok := ipamDict["config"]; ok {
-		for _, poolDef := range config.([]interface{}) {
-			ipamConfig.Config = append(ipamConfig.Config, loadIPAMPool(poolDef.(types.Dict)))
-		}
-	}
-	return ipamConfig
-}
-
-func loadIPAMPool(poolDict types.Dict) types.IPAMPool {
-	ipamPool := types.IPAMPool{}
-	if subnet, ok := poolDict["subnet"]; ok {
-		ipamPool.Subnet = subnet.(string)
-	}
-	return ipamPool
+	return network, nil
 }
 
 func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) {
@@ -221,7 +194,7 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 		if volumeDef == nil {
 			volumes[name] = types.VolumeConfig{}
 		} else {
-			volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
+			volumeConfig, err := loadVolume(volumeDef.(types.Dict))
 			if err != nil {
 				return nil, err
 			}
@@ -232,18 +205,17 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 	return volumes, nil
 }
 
-func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error) {
-	volume := types.VolumeConfig{}
-	if driver, ok := volumeDict["driver"].(string); ok {
-		volume.Driver = driver
+func loadVolume(volumeDict types.Dict) (*types.VolumeConfig, error) {
+	volume := &types.VolumeConfig{}
+	if err := loadStruct(volumeDict, volume); err != nil {
+		return nil, err
 	}
-	if driverOpts, ok := volumeDict["driver_opts"]; ok {
-		volume.DriverOpts = loadStringMapping(driverOpts)
-	}
-	return &volume, nil
+	return volume, nil
 }
 
 func loadStruct(dict types.Dict, dest interface{}) error {
+	fmt.Printf("dest = %#v\n", dest)
+
 	structValue := reflect.ValueOf(dest).Elem()
 	structType := structValue.Type()
 
@@ -288,9 +260,20 @@ func loadStruct(dict types.Dict, dest interface{}) error {
 			fieldValue.SetBool(value.(bool))
 		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
 			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
+		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.Ptr && field.Type.Elem().Elem().Kind() == reflect.Struct {
+			err := loadListOfStructs(value, fieldValue)
+			if err != nil {
+				return err
+			}
+		} else if field.Type.Kind() == reflect.Map && field.Type.Elem().Kind() == reflect.String {
+			fieldValue.Set(reflect.ValueOf(loadStringMapping(value)))
+		} else if field.Type.Kind() == reflect.Struct {
+			if err := loadStruct(value.(types.Dict), fieldValue.Addr().Interface()); err != nil {
+				return err
+			}
 		} else {
-			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %s",
-				field.Name, yamlName, field.Type.Name()))
+			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %v",
+				field.Name, yamlName, field.Type))
 		}
 	}
 
@@ -321,6 +304,20 @@ func loadListOfStrings(value interface{}) []string {
 		result[i] = item.(string)
 	}
 	return result
+}
+
+func loadListOfStructs(value interface{}, dest reflect.Value) error {
+	result := dest
+	listOfDicts := value.([]interface{})
+	for _, item := range listOfDicts {
+		itemStruct := reflect.New(dest.Type().Elem().Elem())
+		if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
+			return err
+		}
+		result = reflect.Append(result, itemStruct)
+	}
+	dest.Set(result)
+	return nil
 }
 
 func loadListOfStringsOrNumbers(value interface{}) []string {
