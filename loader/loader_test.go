@@ -388,6 +388,8 @@ func TestFullExample(t *testing.T) {
 		ContainerName: "my-web-container",
 		DependsOn:     []string{"db", "redis"},
 		Devices:       []string{"/dev/ttyUSB0:/dev/ttyUSB0"},
+		Dns:           []string{"8.8.8.8", "9.9.9.9"},
+		DnsSearch:     []string{"dc1.example.com", "dc2.example.com"},
 		Environment: map[string]string{
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
@@ -419,6 +421,7 @@ func TestFullExample(t *testing.T) {
 			"label=type:svirt_apache_t",
 		},
 		StopSignal: "SIGUSR1",
+		Tmpfs:      []string{"/run", "/tmp"},
 		User:       "someone",
 		Volumes: []string{
 			"/var/lib/mysql",
