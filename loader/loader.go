@@ -261,8 +261,7 @@ func loadStruct(dict types.Dict, dest interface{}) error {
 		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
 			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
 		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.Ptr && field.Type.Elem().Elem().Kind() == reflect.Struct {
-			err := loadListOfStructs(value, fieldValue)
-			if err != nil {
+			if err := loadListOfStructs(value, fieldValue); err != nil {
 				return err
 			}
 		} else if field.Type.Kind() == reflect.Map && field.Type.Elem().Kind() == reflect.String {
