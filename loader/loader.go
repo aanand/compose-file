@@ -175,6 +175,8 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 
 		if field.Type.Kind() == reflect.String {
 			fieldValue.SetString(value.(string))
+		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
+			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
 		}
 	}
 
@@ -277,6 +279,15 @@ func loadStringMapping(value interface{}) map[string]string {
 	result := make(map[string]string)
 	for name, item := range mapping {
 		result[name] = toString(item)
+	}
+	return result
+}
+
+func loadListOfStrings(value interface{}) []string {
+	list := value.([]interface{})
+	result := make([]string, len(list))
+	for i, item := range list {
+		result[i] = item.(string)
 	}
 	return result
 }
