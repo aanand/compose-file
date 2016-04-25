@@ -84,9 +84,10 @@ type UlimitsConfig struct {
 }
 
 type NetworkConfig struct {
-	Driver     string
-	DriverOpts map[string]string
-	Ipam       IPAMConfig
+	Driver       string
+	DriverOpts   map[string]string
+	Ipam         IPAMConfig
+	ExternalName string
 }
 
 type IPAMConfig struct {
@@ -99,6 +100,7 @@ type IPAMPool struct {
 }
 
 type VolumeConfig struct {
-	Driver     string
-	DriverOpts map[string]string
+	Driver       string
+	DriverOpts   map[string]string
+	ExternalName string
 }

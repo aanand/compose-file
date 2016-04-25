@@ -192,7 +192,7 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 		if networkDef == nil {
 			networks[name] = types.NetworkConfig{}
 		} else {
-			networkConfig, err := loadNetwork(networkDef.(types.Dict))
+			networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
 			if err != nil {
 				return nil, err
 			}
@@ -203,10 +203,13 @@ func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, erro
 	return networks, nil
 }
 
-func loadNetwork(networkDict types.Dict) (*types.NetworkConfig, error) {
+func loadNetwork(name string, networkDict types.Dict) (*types.NetworkConfig, error) {
 	network := &types.NetworkConfig{}
 	if err := loadStruct(networkDict, network); err != nil {
 		return nil, err
+	}
+	if external, ok := networkDict["external"]; ok {
+		network.ExternalName = loadExternalName(name, external)
 	}
 	return network, nil
 }
@@ -218,7 +221,7 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 		if volumeDef == nil {
 			volumes[name] = types.VolumeConfig{}
 		} else {
-			volumeConfig, err := loadVolume(volumeDef.(types.Dict))
+			volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
 			if err != nil {
 				return nil, err
 			}
@@ -229,12 +232,27 @@ func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) 
 	return volumes, nil
 }
 
-func loadVolume(volumeDict types.Dict) (*types.VolumeConfig, error) {
+func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error) {
 	volume := &types.VolumeConfig{}
 	if err := loadStruct(volumeDict, volume); err != nil {
 		return nil, err
 	}
+	if external, ok := volumeDict["external"]; ok {
+		volume.ExternalName = loadExternalName(name, external)
+	}
 	return volume, nil
+}
+
+func loadExternalName(resourceName string, value interface{}) string {
+	if externalBool, ok := value.(bool); ok {
+		if externalBool {
+			return resourceName
+		} else {
+			return ""
+		}
+	} else {
+		return value.(types.Dict)["name"].(string)
+	}
 }
 
 func loadStruct(dict types.Dict, dest interface{}) error {

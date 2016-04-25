@@ -488,6 +488,54 @@ func TestFullExample(t *testing.T) {
 	}
 
 	assert.Equal(t, []types.ServiceConfig{expectedServiceConfig}, config.Services)
+
+	expectedNetworkConfig := map[string]types.NetworkConfig{
+		"some-network": types.NetworkConfig{},
+
+		"other-network": types.NetworkConfig{
+			Driver: "overlay",
+			DriverOpts: map[string]string{
+				"foo": "bar",
+				"baz": "1",
+			},
+			Ipam: types.IPAMConfig{
+				Driver: "overlay",
+				Config: []*types.IPAMPool{
+					&types.IPAMPool{Subnet: "172.16.238.0/24"},
+					&types.IPAMPool{Subnet: "2001:3984:3989::/64"},
+				},
+			},
+		},
+
+		"external-network": types.NetworkConfig{
+			ExternalName: "external-network",
+		},
+
+		"other-external-network": types.NetworkConfig{
+			ExternalName: "my-cool-network",
+		},
+	}
+
+	assert.Equal(t, expectedNetworkConfig, config.Networks)
+
+	expectedVolumeConfig := map[string]types.VolumeConfig{
+		"some-volume": types.VolumeConfig{},
+		"other-volume": types.VolumeConfig{
+			Driver: "flocker",
+			DriverOpts: map[string]string{
+				"foo": "bar",
+				"baz": "1",
+			},
+		},
+		"external-volume": types.VolumeConfig{
+			ExternalName: "external-volume",
+		},
+		"other-external-volume": types.VolumeConfig{
+			ExternalName: "my-cool-volume",
+		},
+	}
+
+	assert.Equal(t, expectedVolumeConfig, config.Volumes)
 }
 
 func loadYAML(yaml string) (*types.Config, error) {
