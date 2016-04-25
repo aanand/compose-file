@@ -59,11 +59,11 @@ type ServiceConfig struct {
 	StopSignal    string
 	Tmpfs         []string `compose:"string_or_list"`
 	Tty           bool
-	// Ulimits       map[string]ULimitsConfig
-	User         string
-	Volumes      []string
-	VolumeDriver string
-	WorkingDir   string
+	Ulimits       map[string]*UlimitsConfig `compose:"-"`
+	User          string
+	Volumes       []string
+	VolumeDriver  string
+	WorkingDir    string
 }
 
 type LoggingConfig struct {
@@ -75,6 +75,12 @@ type ServiceNetworkConfig struct {
 	Aliases     []string
 	Ipv4Address string
 	Ipv6Address string
+}
+
+type UlimitsConfig struct {
+	Single int
+	Soft   int
+	Hard   int
 }
 
 type NetworkConfig struct {

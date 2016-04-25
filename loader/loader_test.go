@@ -464,7 +464,16 @@ func TestFullExample(t *testing.T) {
 		StopSignal: "SIGUSR1",
 		Tmpfs:      []string{"/run", "/tmp"},
 		Tty:        true,
-		User:       "someone",
+		Ulimits: map[string]*types.UlimitsConfig{
+			"nproc": &types.UlimitsConfig{
+				Single: 65535,
+			},
+			"nofile": &types.UlimitsConfig{
+				Soft: 20000,
+				Hard: 40000,
+			},
+		},
+		User: "someone",
 		Volumes: []string{
 			"/var/lib/mysql",
 			"/opt/data:/var/lib/mysql",

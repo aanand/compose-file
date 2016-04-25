@@ -158,7 +158,31 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 		return nil, err
 	}
 	serviceConfig.Name = name
+
+	// Load ulimits manually
+	if ulimits, ok := serviceDict["ulimits"]; ok {
+		serviceConfig.Ulimits = loadUlimits(ulimits)
+	}
+
 	return serviceConfig, nil
+}
+
+func loadUlimits(value interface{}) map[string]*types.UlimitsConfig {
+	ulimitsMap := make(map[string]*types.UlimitsConfig)
+
+	for name, item := range value.(types.Dict) {
+		config := &types.UlimitsConfig{}
+		if singleLimit, ok := item.(int); ok {
+			config.Single = singleLimit
+		} else {
+			limitDict := item.(types.Dict)
+			config.Soft = limitDict["soft"].(int)
+			config.Hard = limitDict["hard"].(int)
+		}
+		ulimitsMap[name] = config
+	}
+
+	return ulimitsMap
 }
 
 func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, error) {
@@ -256,6 +280,8 @@ func loadStruct(dict types.Dict, dest interface{}) error {
 				return err
 			}
 			fieldValue.SetInt(size)
+		} else if fieldTag == "-" {
+			// skip
 		} else if fieldTag != "" {
 			panic(fmt.Sprintf("Unrecognised field tag on %s: %s\n", field.Name, fieldTag))
 		} else if field.Type.Kind() == reflect.String {
