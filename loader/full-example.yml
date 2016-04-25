@@ -12,7 +12,7 @@ services:
     cgroup_parent: m-executor-abcd
 
     # String or list
-    command: bundle exec thin -p 3000
+    # command: bundle exec thin -p 3000
     command: ["bundle", "exec", "thin", "-p", "3000"]
 
     container_name: my-web-container
@@ -25,13 +25,13 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
 
     # String or list
-    dns: 8.8.8.8
+    # dns: 8.8.8.8
     dns:
       - 8.8.8.8
       - 9.9.9.9
 
     # String or list
-    dns_search: example.com
+    # dns_search: example.com
     dns_search:
       - dc1.example.com
       - dc2.example.com
@@ -39,11 +39,11 @@ services:
     domainname: foo.com
 
     # String or list
-    entrypoint: /code/entrypoint.sh -p 3000
+    # entrypoint: /code/entrypoint.sh -p 3000
     entrypoint: ["/code/entrypoint.sh", "-p", "3000"]
 
     # String or list
-    env_file: .env
+    # env_file: .env
     env_file:
       - ./common.env
       - ./apps/web.env
@@ -73,9 +73,9 @@ services:
 
     # Mapping or list
     # Mapping values must be strings
-    extra_hosts:
-      somehost: "162.242.195.82"
-      otherhost: "50.31.209.229"
+    # extra_hosts:
+    #   somehost: "162.242.195.82"
+    #   otherhost: "50.31.209.229"
     extra_hosts:
       - "somehost:162.242.195.82"
       - "otherhost:50.31.209.229"
@@ -98,10 +98,10 @@ services:
       com.example.description: "Accounting webapp"
       com.example.number: 42
       com.example.empty-label:
-    labels:
-      - "com.example.description=Accounting webapp"
-      - "com.example.number=42"
-      - "com.example.empty-label"
+    # labels:
+    #   - "com.example.description=Accounting webapp"
+    #   - "com.example.number=42"
+    #   - "com.example.empty-label"
 
     links:
      - db
@@ -117,20 +117,20 @@ services:
 
     # Number or string with size specifier
     mem_limit: 1G
-    mem_limit: 1073741824
+    # mem_limit: 1073741824
 
     # Number or string with size specifier
     memswap_limit: 2G
-    memswap_limit: 2147483648
+    # memswap_limit: 2147483648
 
     network_mode: "bridge"
-    network_mode: "host"
-    network_mode: "none"
+    # network_mode: "host"
+    # network_mode: "none"
     # Use the network mode of an arbitrary container from another service
-    network_mode: "service:db"
+    # network_mode: "service:db"
     # Use the network mode of another container, specified by name or id
-    network_mode: "container:some-container"
-    network_mode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b"
+    # network_mode: "container:some-container"
+    # network_mode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b"
 
     networks:
       some-network:
@@ -163,7 +163,7 @@ services:
       - label=type:svirt_apache_t
 
     # Number or string with size specifier
-    shm_size: 67108864
+    # shm_size: 67108864
     shm_size: 64M
 
     stdin_open: true
@@ -171,7 +171,7 @@ services:
     stop_signal: SIGUSR1
 
     # String or list
-    tmpfs: /run
+    # tmpfs: /run
     tmpfs:
       - /run
       - /tmp
