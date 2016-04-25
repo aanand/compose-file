@@ -42,11 +42,11 @@ type ServiceConfig struct {
 	Ipc           string
 	Labels        map[string]string `compose:"list_or_dict_equals"`
 	Links         []string
-	// Logging       LoggingConfig
-	MacAddress   string
-	MemLimit     int `compose:"size"`
-	MemswapLimit int `compose:"size"`
-	NetworkMode  string
+	Logging       LoggingConfig
+	MacAddress    string
+	MemLimit      int `compose:"size"`
+	MemswapLimit  int `compose:"size"`
+	NetworkMode   string
 	// Networks      map[string]ServiceNetworkConfig
 	Pid         string
 	Ports       []string `compose:"list_of_strings_or_numbers"`
@@ -64,6 +64,11 @@ type ServiceConfig struct {
 	Volumes      []string
 	VolumeDriver string
 	WorkingDir   string
+}
+
+type LoggingConfig struct {
+	Driver  string
+	Options map[string]string
 }
 
 type NetworkConfig struct {

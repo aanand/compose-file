@@ -97,7 +97,12 @@
 
             "properties": {
                 "driver": {"type": "string"},
-                "options": {"type": "object"}
+                "options": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^.+$": {"type": ["string", "number", "null"]}
+                  }
+                }
             },
             "additionalProperties": false
         },

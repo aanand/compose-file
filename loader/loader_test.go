@@ -420,6 +420,12 @@ func TestFullExample(t *testing.T) {
 			"db:database",
 			"redis",
 		},
+		Logging: types.LoggingConfig{
+			Driver: "syslog",
+			Options: map[string]string{
+				"syslog-address": "tcp://192.168.0.42:123",
+			},
+		},
 		MacAddress:   "02:42:ac:11:65:43",
 		MemLimit:     1073741824,
 		MemswapLimit: 2147483648,
