@@ -166,10 +166,14 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 			continue
 		}
 
+		fmt.Println(yamlName)
+
 		if fieldTag == "list_or_dict_equals" {
 			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
 		} else if fieldTag == "string_or_list" {
 			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
+		} else if fieldTag == "list_of_strings_or_numbers" {
+			fieldValue.Set(reflect.ValueOf(loadListOfStringsOrNumbers(value)))
 		} else if fieldTag != "" {
 			fmt.Printf("skipping %s - unrecognised tag %s\n", yamlName, fieldTag)
 		} else if field.Type.Kind() == reflect.String {
@@ -287,6 +291,15 @@ func loadListOfStrings(value interface{}) []string {
 	result := make([]string, len(list))
 	for i, item := range list {
 		result[i] = item.(string)
+	}
+	return result
+}
+
+func loadListOfStringsOrNumbers(value interface{}) []string {
+	list := value.([]interface{})
+	result := make([]string, len(list))
+	for i, item := range list {
+		result[i] = fmt.Sprint(item)
 	}
 	return result
 }

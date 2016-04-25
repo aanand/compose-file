@@ -395,6 +395,7 @@ func TestFullExample(t *testing.T) {
 			"SHOW":           "true",
 			"SESSION_SECRET": "",
 		},
+		Expose: []string{"3000", "8000"},
 		ExternalLinks: []string{
 			"redis_1",
 			"project_db_1:mysql",
@@ -416,6 +417,15 @@ func TestFullExample(t *testing.T) {
 		MacAddress:  "02:42:ac:11:65:43",
 		NetworkMode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
 		Pid:         "host",
+		Ports: []string{
+			"3000",
+			"3000-3005",
+			"8000:8000",
+			"9090-9091:8080-8081",
+			"49100:22",
+			"127.0.0.1:8001:8001",
+			"127.0.0.1:5000-5010:5000-5010",
+		},
 		SecurityOpt: []string{
 			"label=level:s0:c100,c200",
 			"label=type:svirt_apache_t",
