@@ -172,10 +172,7 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
 		} else if fieldTag != "" {
 			fmt.Printf("skipping %s - unrecognised tag %s\n", yamlName, fieldTag)
-			continue
-		}
-
-		if field.Type.Kind() == reflect.String {
+		} else if field.Type.Kind() == reflect.String {
 			fieldValue.SetString(value.(string))
 		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
 			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
