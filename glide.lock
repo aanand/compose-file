@@ -1,6 +1,8 @@
-hash: f5435fd9cdd6f63e55c01acec6ad97e8bab1cac0ec676277dee282b7d9b4aaf3
-updated: 2016-04-20T11:12:31.401265825+01:00
+hash: a92acb98fba184df5d98ddad212b79f829395431fc3181cd1a1febba92e3e318
+updated: 2016-04-25T10:50:44.54184281+01:00
 imports:
+- name: github.com/mattn/go-shellwords
+  version: 525bedee691b5a8df547cb5cf9f86b7fb1883e24
 - name: github.com/stretchr/testify
   version: c5d7a69bf8a2c9c374798160849c071093e41dd1
 - name: github.com/xeipuuv/gojsonpointer

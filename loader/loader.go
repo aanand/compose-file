@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	shellwords "github.com/mattn/go-shellwords"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/aanand/compose-file/schema"
@@ -174,6 +175,12 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
 		} else if fieldTag == "list_of_strings_or_numbers" {
 			fieldValue.Set(reflect.ValueOf(loadListOfStringsOrNumbers(value)))
+		} else if fieldTag == "shell_command" {
+			command, err := loadShellCommand(value)
+			if err != nil {
+				return nil, err
+			}
+			fieldValue.Set(reflect.ValueOf(command))
 		} else if fieldTag != "" {
 			fmt.Printf("skipping %s - unrecognised tag %s\n", yamlName, fieldTag)
 		} else if field.Type.Kind() == reflect.String {
@@ -333,6 +340,14 @@ func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string 
 	}
 
 	return result
+}
+
+func loadShellCommand(value interface{}) ([]string, error) {
+	if str, ok := value.(string); ok {
+		return shellwords.Parse(str)
+	} else {
+		return loadListOfStrings(value), nil
+	}
 }
 
 func toString(value interface{}) string {

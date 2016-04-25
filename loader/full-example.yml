@@ -12,8 +12,8 @@ services:
     cgroup_parent: m-executor-abcd
 
     # String or list
-    # command: bundle exec thin -p 3000
-    command: ["bundle", "exec", "thin", "-p", "3000"]
+    command: bundle exec thin -p 3000
+    # command: ["bundle", "exec", "thin", "-p", "3000"]
 
     container_name: my-web-container
 

@@ -1,5 +1,6 @@
 package: .
 import:
+  - package: github.com/mattn/go-shellwords
   - package: github.com/stretchr/testify
   - package: github.com/xeipuuv/gojsonreference
   - package: github.com/xeipuuv/gojsonschema

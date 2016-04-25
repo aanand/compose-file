@@ -385,11 +385,13 @@ func TestFullExample(t *testing.T) {
 		CapAdd:        []string{"ALL"},
 		CapDrop:       []string{"NET_ADMIN", "SYS_ADMIN"},
 		CgroupParent:  "m-executor-abcd",
+		Command:       []string{"bundle", "exec", "thin", "-p", "3000"},
 		ContainerName: "my-web-container",
 		DependsOn:     []string{"db", "redis"},
 		Devices:       []string{"/dev/ttyUSB0:/dev/ttyUSB0"},
 		Dns:           []string{"8.8.8.8", "9.9.9.9"},
 		DnsSearch:     []string{"dc1.example.com", "dc2.example.com"},
+		Entrypoint:    []string{"/code/entrypoint.sh", "-p", "3000"},
 		Environment: map[string]string{
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
