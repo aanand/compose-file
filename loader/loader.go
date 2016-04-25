@@ -153,17 +153,25 @@ func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
 }
 
 func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, error) {
-	serviceType := reflect.TypeOf(types.ServiceConfig{})
-	serviceValue := reflect.New(serviceType).Elem()
-	serviceValue.FieldByName("Name").SetString(name)
+	serviceConfig := &types.ServiceConfig{}
+	if err := loadStruct(serviceDict, serviceConfig); err != nil {
+		return nil, err
+	}
+	serviceConfig.Name = name
+	return serviceConfig, nil
+}
 
-	for i := 0; i < serviceType.NumField(); i++ {
-		field := serviceType.Field(i)
-		fieldValue := serviceValue.FieldByIndex([]int{i})
+func loadStruct(dict types.Dict, dest interface{}) error {
+	structValue := reflect.ValueOf(dest).Elem()
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		fieldValue := structValue.FieldByIndex([]int{i})
 		fieldTag := field.Tag.Get("compose")
 
 		yamlName := toYAMLName(field.Name)
-		value, ok := serviceDict[yamlName]
+		value, ok := dict[yamlName]
 		if !ok {
 			continue
 		}
@@ -181,13 +189,13 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 		} else if fieldTag == "shell_command" {
 			command, err := loadShellCommand(value)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			fieldValue.Set(reflect.ValueOf(command))
 		} else if fieldTag == "size" {
 			size, err := loadSize(value)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			fieldValue.SetInt(size)
 		} else if fieldTag != "" {
@@ -204,8 +212,7 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 		}
 	}
 
-	serviceConfig := serviceValue.Interface().(types.ServiceConfig)
-	return &serviceConfig, nil
+	return nil
 }
 
 func toYAMLName(name string) string {
