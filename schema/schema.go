@@ -1,6 +1,6 @@
-//go:generate go-bindata -pkg schema data
-
 package schema
+
+//go:generate go-bindata -pkg schema data
 
 import (
 	"fmt"
@@ -20,6 +20,7 @@ func init() {
 	gojsonschema.FormatCheckers.Add("ports", portsFormatChecker{})
 }
 
+// Validate uses the jsonschema to validate the configuration
 func Validate(config map[string]interface{}) error {
 	schemaData, err := Asset("data/config_schema_v2.1.json")
 	if err != nil {

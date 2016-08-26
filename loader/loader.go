@@ -16,17 +16,13 @@ import (
 	"github.com/aanand/compose-file/types"
 )
 
-var fieldNameRegexp *regexp.Regexp
+var (
+	fieldNameRegexp = regexp.MustCompile("[A-Z][a-z0-9]+")
+)
 
-func init() {
-	r, err := regexp.Compile("[A-Z][a-z0-9]+")
-	if err != nil {
-		panic(err)
-	}
-	fieldNameRegexp = r
-}
-
-func ParseYAML(source []byte, filename string) (*types.ConfigFile, error) {
+// ParseYAML reads the bytes from a file, parses the bytes into a mapping
+// structure, and returns it.
+func ParseYAML(source []byte) (types.Dict, error) {
 	var cfg interface{}
 	if err := yaml.Unmarshal(source, &cfg); err != nil {
 		return nil, err
@@ -39,13 +35,10 @@ func ParseYAML(source []byte, filename string) (*types.ConfigFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	configFile := types.ConfigFile{
-		Filename: filename,
-		Config:   converted.(types.Dict),
-	}
-	return &configFile, nil
+	return converted.(types.Dict), nil
 }
 
+// Load reads a ConfigDetails and returns a fully loaded configuration
 func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	if len(configDetails.ConfigFiles) < 1 {
 		return nil, fmt.Errorf("No files specified")
@@ -97,6 +90,8 @@ func validateAgainstConfigSchema(file types.ConfigFile) error {
 	return schema.Validate(file.Config)
 }
 
+// TODO: should this be renamed to validateStringKeys? Why do the keys need to
+// be converted?
 func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interface{}, error) {
 	if mapping, ok := value.(map[interface{}]interface{}); ok {
 		dict := make(types.Dict)
@@ -124,7 +119,8 @@ func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interfac
 			dict[str] = convertedEntry
 		}
 		return dict, nil
-	} else if list, ok := value.([]interface{}); ok {
+	}
+	if list, ok := value.([]interface{}); ok {
 		var convertedList []interface{}
 		for index, entry := range list {
 			newKeyPrefix := fmt.Sprintf("%s[%d]", keyPrefix, index)
@@ -135,9 +131,8 @@ func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interfac
 			convertedList = append(convertedList, convertedEntry)
 		}
 		return convertedList, nil
-	} else {
-		return value, nil
 	}
+	return value, nil
 }
 
 func loadServices(servicesDict types.Dict, workingDir string) ([]types.ServiceConfig, error) {
@@ -281,12 +276,10 @@ func loadExternalName(resourceName string, value interface{}) string {
 	if externalBool, ok := value.(bool); ok {
 		if externalBool {
 			return resourceName
-		} else {
-			return ""
 		}
-	} else {
-		return value.(types.Dict)["name"].(string)
+		return ""
 	}
+	return value.(types.Dict)["name"].(string)
 }
 
 func loadStruct(dict types.Dict, dest interface{}) error {
@@ -433,9 +426,8 @@ func loadListOfStringsOrNumbers(value interface{}) []string {
 func loadStringOrListOfStrings(value interface{}) []string {
 	if _, ok := value.([]interface{}); ok {
 		return loadListOfStrings(value)
-	} else {
-		return []string{value.(string)}
 	}
+	return []string{value.(string)}
 }
 
 func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string {
@@ -464,23 +456,20 @@ func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string 
 func loadShellCommand(value interface{}) ([]string, error) {
 	if str, ok := value.(string); ok {
 		return shellwords.Parse(str)
-	} else {
-		return loadListOfStrings(value), nil
 	}
+	return loadListOfStrings(value), nil
 }
 
 func loadSize(value interface{}) (int64, error) {
 	if size, ok := value.(int); ok {
 		return int64(size), nil
-	} else {
-		return units.RAMInBytes(value.(string))
 	}
+	return units.RAMInBytes(value.(string))
 }
 
 func toString(value interface{}) string {
 	if value == nil {
 		return ""
-	} else {
-		return fmt.Sprint(value)
 	}
+	return fmt.Sprint(value)
 }
