@@ -290,8 +290,6 @@ func loadExternalName(resourceName string, value interface{}) string {
 }
 
 func loadStruct(dict types.Dict, dest interface{}) error {
-	fmt.Printf("dest = %#v\n", dest)
-
 	structValue := reflect.ValueOf(dest).Elem()
 	structType := structValue.Type()
 
@@ -305,8 +303,6 @@ func loadStruct(dict types.Dict, dest interface{}) error {
 		if !ok {
 			continue
 		}
-
-		fmt.Println(yamlName)
 
 		if fieldTag == "list_or_dict_equals" {
 			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
