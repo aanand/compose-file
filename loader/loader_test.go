@@ -135,13 +135,17 @@ var sampleConfig = types.Config{
 
 func TestParseYAML(t *testing.T) {
 	dict, err := ParseYAML([]byte(sampleYAML))
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 	assert.Equal(t, sampleDict, dict)
 }
 
 func TestLoad(t *testing.T) {
 	actual, err := Load(buildConfigDetails(sampleDict))
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
 	assert.Equal(t, sampleConfig.Networks, actual.Networks)
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
@@ -149,7 +153,9 @@ func TestLoad(t *testing.T) {
 
 func TestParseAndLoad(t *testing.T) {
 	actual, err := loadYAML(sampleYAML)
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 	assert.Equal(t, serviceSort(sampleConfig.Services), serviceSort(actual.Services))
 	assert.Equal(t, sampleConfig.Networks, actual.Networks)
 	assert.Equal(t, sampleConfig.Volumes, actual.Volumes)
@@ -419,7 +425,9 @@ func TestFullExample(t *testing.T) {
 	assert.NoError(t, err)
 
 	config, err := loadYAML(string(bytes))
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	workingDir, err := os.Getwd()
 	assert.NoError(t, err)
@@ -438,13 +446,15 @@ func TestFullExample(t *testing.T) {
 		Devices:       []string{"/dev/ttyUSB0:/dev/ttyUSB0"},
 		Dns:           []string{"8.8.8.8", "9.9.9.9"},
 		DnsSearch:     []string{"dc1.example.com", "dc2.example.com"},
+		DomainName:    "foo.com",
 		Entrypoint:    []string{"/code/entrypoint.sh", "-p", "3000"},
 		Environment: map[string]string{
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
 			"SESSION_SECRET": "",
 		},
-		Expose: []string{"3000", "8000"},
+		EnvFile: []string{"./common.env", "./apps/web.env", "/opt/secrets.env"},
+		Expose:  []string{"3000", "8000"},
 		ExternalLinks: []string{
 			"redis_1",
 			"project_db_1:mysql",
@@ -484,11 +494,10 @@ func TestFullExample(t *testing.T) {
 				Ipv6Address: "",
 			},
 			"other-network": {
-				Aliases:     nil,
 				Ipv4Address: "172.16.238.10",
 				Ipv6Address: "2001:3984:3989::10",
 			},
-			"other-other-network": {},
+			"other-other-network": nil,
 		},
 		Pid: "host",
 		Ports: []string{
@@ -555,11 +564,17 @@ func TestFullExample(t *testing.T) {
 		},
 
 		"external-network": {
-			ExternalName: "external-network",
+			External: types.External{
+				Name:     "external-network",
+				External: true,
+			},
 		},
 
 		"other-external-network": {
-			ExternalName: "my-cool-network",
+			External: types.External{
+				Name:     "my-cool-network",
+				External: true,
+			},
 		},
 	}
 
@@ -575,10 +590,16 @@ func TestFullExample(t *testing.T) {
 			},
 		},
 		"external-volume": {
-			ExternalName: "external-volume",
+			External: types.External{
+				Name:     "external-volume",
+				External: true,
+			},
 		},
 		"other-external-volume": {
-			ExternalName: "my-cool-volume",
+			External: types.External{
+				Name:     "my-cool-volume",
+				External: true,
+			},
 		},
 	}
 

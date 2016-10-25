@@ -1,10 +1,12 @@
-hash: 9608bf151ad45c1a11b596e0903f3b599dd027a812110b28bb464a8be066a907
-updated: 2016-08-26T18:35:32.56479457Z
+hash: a0e98c9874029e2889f0ff0337c77cb523158ec2e1771a0aed11d0bf6c3b99a5
+updated: 2016-10-25T19:46:35.452989008Z
 imports:
 - name: github.com/docker/go-units
   version: eb879ae3e2b84e2a142af415b679ddeda47ec71c
 - name: github.com/mattn/go-shellwords
   version: 525bedee691b5a8df547cb5cf9f86b7fb1883e24
+- name: github.com/mitchellh/mapstructure
+  version: f3009df150dadf309fdee4a54ed65c124afad715
 - name: github.com/stretchr/testify
   version: c5d7a69bf8a2c9c374798160849c071093e41dd1
   subpackages:
