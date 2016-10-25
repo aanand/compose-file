@@ -1,7 +1,9 @@
 package loader
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"sort"
 	"testing"
 
@@ -11,8 +13,13 @@ import (
 )
 
 func buildConfigDetails(source types.Dict) types.ConfigDetails {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
 	return types.ConfigDetails{
-		WorkingDir: ".",
+		WorkingDir: workingDir,
 		ConfigFiles: []types.ConfigFile{
 			types.ConfigFile{Filename: "filename.yml", Config: source},
 		},
@@ -379,6 +386,11 @@ func TestFullExample(t *testing.T) {
 	config, err := loadYAML(string(bytes))
 	assert.NoError(t, err)
 
+	workingDir, err := os.Getwd()
+	assert.NoError(t, err)
+
+	homeDir := os.Getenv("HOME")
+
 	expectedServiceConfig := types.ServiceConfig{
 		Name: "foo",
 
@@ -478,9 +490,9 @@ func TestFullExample(t *testing.T) {
 		Volumes: []string{
 			"/var/lib/mysql",
 			"/opt/data:/var/lib/mysql",
-			".:/code",
-			"./static:/var/www/html",
-			"~/configs:/etc/configs/:ro",
+			fmt.Sprintf("%s:/code", workingDir),
+			fmt.Sprintf("%s/static:/var/www/html", workingDir),
+			fmt.Sprintf("%s/configs:/etc/configs/:ro", homeDir),
 			"datavolume:/var/lib/mysql",
 		},
 		VolumeDriver: "mydriver",

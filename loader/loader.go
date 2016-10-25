@@ -2,6 +2,8 @@ package loader
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"strings"
@@ -65,7 +67,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	if services, ok := file.Config["services"]; ok {
-		serviceMapping, err := loadServices(services.(types.Dict))
+		serviceMapping, err := loadServices(services.(types.Dict), configDetails.WorkingDir)
 		if err != nil {
 			return nil, err
 		}
@@ -138,11 +140,11 @@ func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interfac
 	}
 }
 
-func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
+func loadServices(servicesDict types.Dict, workingDir string) ([]types.ServiceConfig, error) {
 	var services []types.ServiceConfig
 
 	for name, serviceDef := range servicesDict {
-		serviceConfig, err := loadService(name, serviceDef.(types.Dict))
+		serviceConfig, err := loadService(name, serviceDef.(types.Dict), workingDir)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +154,7 @@ func loadServices(servicesDict types.Dict) ([]types.ServiceConfig, error) {
 	return services, nil
 }
 
-func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, error) {
+func loadService(name string, serviceDict types.Dict, workingDir string) (*types.ServiceConfig, error) {
 	serviceConfig := &types.ServiceConfig{}
 	if err := loadStruct(serviceDict, serviceConfig); err != nil {
 		return nil, err
@@ -164,7 +166,39 @@ func loadService(name string, serviceDict types.Dict) (*types.ServiceConfig, err
 		serviceConfig.Ulimits = loadUlimits(ulimits)
 	}
 
+	if err := resolveVolumePaths(serviceConfig.Volumes, workingDir); err != nil {
+		return nil, err
+	}
+
 	return serviceConfig, nil
+}
+
+// TODO: handle invalid mappings here?
+func resolveVolumePaths(volumes []string, workingDir string) error {
+	for i, mapping := range volumes {
+		parts := strings.SplitN(mapping, ":", 2)
+		if len(parts) == 1 {
+			continue
+		}
+
+		if strings.HasPrefix(parts[0], ".") {
+			parts[0] = path.Join(workingDir, parts[0])
+		}
+		parts[0] = expandUser(parts[0])
+
+		volumes[i] = strings.Join(parts, ":")
+	}
+
+	return nil
+}
+
+// TODO: make this more robust
+func expandUser(path string) string {
+	if strings.HasPrefix(path, "~") {
+		return strings.Replace(path, "~", os.Getenv("HOME"), 1)
+	} else {
+		return path
+	}
 }
 
 func loadUlimits(value interface{}) map[string]*types.UlimitsConfig {
