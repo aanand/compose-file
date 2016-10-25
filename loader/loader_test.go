@@ -21,7 +21,7 @@ func buildConfigDetails(source types.Dict) types.ConfigDetails {
 	return types.ConfigDetails{
 		WorkingDir: workingDir,
 		ConfigFiles: []types.ConfigFile{
-			types.ConfigFile{Filename: "filename.yml", Config: source},
+			{Filename: "filename.yml", Config: source},
 		},
 		Environment: nil,
 	}
@@ -94,29 +94,29 @@ var sampleDict = types.Dict{
 
 var sampleConfig = types.Config{
 	Services: []types.ServiceConfig{
-		types.ServiceConfig{
+		{
 			Name:        "foo",
 			Image:       "busybox",
 			Environment: nil,
 		},
-		types.ServiceConfig{
+		{
 			Name:        "bar",
 			Image:       "busybox",
 			Environment: map[string]string{"FOO": "1"},
 		},
 	},
 	Networks: map[string]types.NetworkConfig{
-		"default": types.NetworkConfig{
+		"default": {
 			Driver: "bridge",
 			DriverOpts: map[string]string{
 				"beep": "boop",
 			},
 		},
-		"with_ipam": types.NetworkConfig{
+		"with_ipam": {
 			Ipam: types.IPAMConfig{
 				Driver: "default",
 				Config: []*types.IPAMPool{
-					&types.IPAMPool{
+					{
 						Subnet: "172.28.0.0/16",
 					},
 				},
@@ -124,7 +124,7 @@ var sampleConfig = types.Config{
 		},
 	},
 	Volumes: map[string]types.VolumeConfig{
-		"hello": types.VolumeConfig{
+		"hello": {
 			Driver: "default",
 			DriverOpts: map[string]string{
 				"beep": "boop",
@@ -134,9 +134,9 @@ var sampleConfig = types.Config{
 }
 
 func TestParseYAML(t *testing.T) {
-	configFile, err := ParseYAML([]byte(sampleYAML), "filename.yml")
+	dict, err := ParseYAML([]byte(sampleYAML))
 	assert.NoError(t, err)
-	assert.Equal(t, sampleDict, configFile.Config)
+	assert.Equal(t, sampleDict, dict)
 }
 
 func TestLoad(t *testing.T) {
@@ -443,17 +443,17 @@ func TestFullExample(t *testing.T) {
 		MemswapLimit: 2147483648,
 		NetworkMode:  "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
 		Networks: map[string]*types.ServiceNetworkConfig{
-			"some-network": &types.ServiceNetworkConfig{
+			"some-network": {
 				Aliases:     []string{"alias1", "alias3"},
 				Ipv4Address: "",
 				Ipv6Address: "",
 			},
-			"other-network": &types.ServiceNetworkConfig{
+			"other-network": {
 				Aliases:     nil,
 				Ipv4Address: "172.16.238.10",
 				Ipv6Address: "2001:3984:3989::10",
 			},
-			"other-other-network": &types.ServiceNetworkConfig{},
+			"other-other-network": {},
 		},
 		Pid: "host",
 		Ports: []string{
@@ -478,10 +478,10 @@ func TestFullExample(t *testing.T) {
 		Tmpfs:      []string{"/run", "/tmp"},
 		Tty:        true,
 		Ulimits: map[string]*types.UlimitsConfig{
-			"nproc": &types.UlimitsConfig{
+			"nproc": {
 				Single: 65535,
 			},
-			"nofile": &types.UlimitsConfig{
+			"nofile": {
 				Soft: 20000,
 				Hard: 40000,
 			},
@@ -502,9 +502,9 @@ func TestFullExample(t *testing.T) {
 	assert.Equal(t, []types.ServiceConfig{expectedServiceConfig}, config.Services)
 
 	expectedNetworkConfig := map[string]types.NetworkConfig{
-		"some-network": types.NetworkConfig{},
+		"some-network": {},
 
-		"other-network": types.NetworkConfig{
+		"other-network": {
 			Driver: "overlay",
 			DriverOpts: map[string]string{
 				"foo": "bar",
@@ -513,17 +513,17 @@ func TestFullExample(t *testing.T) {
 			Ipam: types.IPAMConfig{
 				Driver: "overlay",
 				Config: []*types.IPAMPool{
-					&types.IPAMPool{Subnet: "172.16.238.0/24"},
-					&types.IPAMPool{Subnet: "2001:3984:3989::/64"},
+					{Subnet: "172.16.238.0/24"},
+					{Subnet: "2001:3984:3989::/64"},
 				},
 			},
 		},
 
-		"external-network": types.NetworkConfig{
+		"external-network": {
 			ExternalName: "external-network",
 		},
 
-		"other-external-network": types.NetworkConfig{
+		"other-external-network": {
 			ExternalName: "my-cool-network",
 		},
 	}
@@ -531,18 +531,18 @@ func TestFullExample(t *testing.T) {
 	assert.Equal(t, expectedNetworkConfig, config.Networks)
 
 	expectedVolumeConfig := map[string]types.VolumeConfig{
-		"some-volume": types.VolumeConfig{},
-		"other-volume": types.VolumeConfig{
+		"some-volume": {},
+		"other-volume": {
 			Driver: "flocker",
 			DriverOpts: map[string]string{
 				"foo": "bar",
 				"baz": "1",
 			},
 		},
-		"external-volume": types.VolumeConfig{
+		"external-volume": {
 			ExternalName: "external-volume",
 		},
-		"other-external-volume": types.VolumeConfig{
+		"other-external-volume": {
 			ExternalName: "my-cool-volume",
 		},
 	}
@@ -551,12 +551,12 @@ func TestFullExample(t *testing.T) {
 }
 
 func loadYAML(yaml string) (*types.Config, error) {
-	configFile, err := ParseYAML([]byte(yaml), "filename.yml")
+	dict, err := ParseYAML([]byte(yaml))
 	if err != nil {
 		return nil, err
 	}
 
-	return Load(buildConfigDetails(configFile.Config))
+	return Load(buildConfigDetails(dict))
 }
 
 func serviceSort(services []types.ServiceConfig) []types.ServiceConfig {

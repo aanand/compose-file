@@ -1,0 +1,11 @@
+#!/bin/bash
+
+exec filewatcher \
+    -x '.git' \
+    -x 'vendor' \
+    -x '**/*.swp' \
+    -x 'dist' \
+    -x 'script' \
+    -x 'docs' \
+    -- \
+    go test -v './${dir}'
