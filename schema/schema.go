@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -12,17 +13,26 @@ import (
 type portsFormatChecker struct{}
 
 func (checker portsFormatChecker) IsFormat(input string) bool {
+	// TODO: implement this
 	return true
+}
+
+type durationFormatChecker struct{}
+
+func (checker durationFormatChecker) IsFormat(input string) bool {
+	_, err := time.ParseDuration(input)
+	return err == nil
 }
 
 func init() {
 	gojsonschema.FormatCheckers.Add("expose", portsFormatChecker{})
 	gojsonschema.FormatCheckers.Add("ports", portsFormatChecker{})
+	gojsonschema.FormatCheckers.Add("duration", durationFormatChecker{})
 }
 
 // Validate uses the jsonschema to validate the configuration
 func Validate(config map[string]interface{}) error {
-	schemaData, err := Asset("data/config_schema_v2.1.json")
+	schemaData, err := Asset("data/config_schema_v3.json")
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "config_schema_v2.1.json",
+  "id": "config_schema_v3.json",
   "type": "object",
   "required": ["version"],
 
@@ -51,6 +51,7 @@
       "type": "object",
 
       "properties": {
+        "deploy": {"$ref": "#/definitions/deployment"},
         "cap_add": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
         "cap_drop": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
         "cgroup_parent": {"type": "string"},
@@ -155,6 +156,7 @@
         "shm_size": {"type": ["number", "string"]},
         "stdin_open": {"type": "boolean"},
         "stop_signal": {"type": "string"},
+        "stop_grace_period": {"type": "string", "format": "duration"},
         "tmpfs": {"$ref": "#/definitions/string_or_list"},
         "tty": {"type": "boolean"},
         "ulimits": {
@@ -186,6 +188,62 @@
         "memswap_limit": ["mem_limit"]
       },
       "additionalProperties": false
+    },
+
+    "deployment": {
+      "id": "#/definitions/deployment",
+      "type": ["object", "null"],
+      "properties": {
+        "mode": {"type": "string"},
+        "replicas": {"type": "integer"},
+        "labels": {"$ref": "#/definitions/list_or_dict"},
+        "update_config": {
+          "type": "object",
+          "properties": {
+            "parallelism": {"type": "integer"},
+            "delay": {"type": "string", "format": "duration"},
+            "failure_action": {"type": "string"},
+            "monitor": {"type": "string", "format": "duration"},
+            "max_failure_ratio": {"type": "number"}
+          },
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "limits": {"$ref": "#/definitions/resource"},
+            "reservations": {"$ref": "#/definitions/resource"}
+          }
+        },
+        "restart_policy": {
+          "type": "object",
+          "properties": {
+            "condition": {"type": "string"},
+            "delay": {"type": "string", "format": "duration"},
+            "max_attempts": {"type": "integer"},
+            "window": {"type": "string", "format": "duration"}
+          },
+          "additionalProperties": false
+        },
+        "placement": {
+          "type": "object",
+          "properties": {
+            "constraints": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "resource": {
+      "id": "#/definitions/resource",
+      "type": "object",
+      "properties": {
+        "cpus": {"type": "string"},
+        "bytes": {"type": "string"}
+      },
+      "additionaProperties": false
     },
 
     "network": {
@@ -222,7 +280,8 @@
             "name": {"type": "string"}
           },
           "additionalProperties": false
-        }
+        },
+        "labels": {"$ref": "#/definitions/list_or_dict"}
       },
       "additionalProperties": false
     },
@@ -245,6 +304,7 @@
           }
         }
       },
+      "labels": {"$ref": "#/definitions/list_or_dict"},
       "additionalProperties": false
     },
 

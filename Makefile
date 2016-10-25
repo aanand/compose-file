@@ -1,5 +1,5 @@
 SCHEMA_GO := schema/bindata.go
-SCHEMA_JSON := schema/data/config_schema_v2.1.json
+SCHEMA_JSON := schema/data/config_schema_v3.json
 
 test:
 	go test ./loader ./schema
