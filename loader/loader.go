@@ -55,8 +55,8 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	version := file.Config["version"].(string)
-	if version != "2.1" {
-		return nil, fmt.Errorf("Unsupported version: %#v. The only supported version is 2.1", version)
+	if version != "3" {
+		return nil, fmt.Errorf("Unsupported version: %#v. The only supported version is 3", version)
 	}
 
 	if services, ok := file.Config["services"]; ok {
@@ -191,11 +191,11 @@ func resolveVolumePaths(volumes []string, workingDir string) error {
 func expandUser(path string) string {
 	if strings.HasPrefix(path, "~") {
 		return strings.Replace(path, "~", os.Getenv("HOME"), 1)
-	} else {
-		return path
 	}
+	return path
 }
 
+// TODO: this should be part of the transform
 func loadUlimits(value interface{}) map[string]*types.UlimitsConfig {
 	ulimitsMap := make(map[string]*types.UlimitsConfig)
 

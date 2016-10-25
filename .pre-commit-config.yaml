@@ -21,6 +21,6 @@
       exclude: '^vendor/'
       args: ['-s']
     - id: go-lint
-      exclude: '^vendor/'
+      exclude: '^(vendor/|schema/bindata\.go)'
     - id: go-vet
       exclude: '^vendor/'

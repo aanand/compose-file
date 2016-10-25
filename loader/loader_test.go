@@ -28,7 +28,7 @@ func buildConfigDetails(source types.Dict) types.ConfigDetails {
 }
 
 var sampleYAML = `
-version: "2.1"
+version: "3"
 services:
   foo:
     image: busybox
@@ -54,7 +54,7 @@ networks:
 `
 
 var sampleDict = types.Dict{
-	"version": "2.1",
+	"version": "3",
 	"services": types.Dict{
 		"foo": types.Dict{
 			"image": "busybox",
@@ -171,7 +171,7 @@ func TestInvalidTopLevelObjectType(t *testing.T) {
 
 func TestNonStringKeys(t *testing.T) {
 	_, err := loadYAML(`
-version: "2.1"
+version: "3"
 123:
   foo:
     image: busybox
@@ -180,7 +180,7 @@ version: "2.1"
 	assert.Contains(t, err.Error(), "Non-string key at top level: 123")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 services:
   foo:
     image: busybox
@@ -191,7 +191,7 @@ services:
 	assert.Contains(t, err.Error(), "Non-string key in services: 123")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 services:
   foo:
     image: busybox
@@ -205,7 +205,7 @@ networks:
 	assert.Contains(t, err.Error(), "Non-string key in networks.default.ipam.config[0]: 123")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 services:
   dict-env:
     image: busybox
@@ -238,7 +238,7 @@ services:
 
 func TestInvalidVersion(t *testing.T) {
 	_, err := loadYAML(`
-version: 2.1
+version: 3
 services:
   foo:
     image: busybox
@@ -257,7 +257,7 @@ foo:
 
 func TestNonMappingObject(t *testing.T) {
 	_, err := loadYAML(`
-version: "2.1"
+version: "3"
 services:
   - foo:
       image: busybox
@@ -266,7 +266,7 @@ services:
 	assert.Contains(t, err.Error(), "services must be a mapping")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 services:
   foo: busybox
 `)
@@ -274,7 +274,7 @@ services:
 	assert.Contains(t, err.Error(), "services.foo must be a mapping")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 networks:
   - default:
       driver: bridge
@@ -283,7 +283,7 @@ networks:
 	assert.Contains(t, err.Error(), "networks must be a mapping")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 networks:
   default: bridge
 `)
@@ -291,7 +291,7 @@ networks:
 	assert.Contains(t, err.Error(), "networks.default must be a mapping")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 volumes:
   - data:
       driver: local
@@ -300,7 +300,7 @@ volumes:
 	assert.Contains(t, err.Error(), "volumes must be a mapping")
 
 	_, err = loadYAML(`
-version: "2.1"
+version: "3"
 volumes:
   data: local
 `)
@@ -310,7 +310,7 @@ volumes:
 
 func TestNonStringImage(t *testing.T) {
 	_, err := loadYAML(`
-version: "2.1"
+version: "3"
 services:
   foo:
     image: ["busybox", "latest"]
@@ -321,7 +321,7 @@ services:
 
 func TestValidEnvironment(t *testing.T) {
 	config, err := loadYAML(`
-version: "2.1"
+version: "3"
 services:
   dict-env:
     image: busybox
@@ -356,7 +356,7 @@ services:
 
 func TestInvalidEnvironmentValue(t *testing.T) {
 	_, err := loadYAML(`
-version: "2.1"
+version: "3"
 services:
   dict-env:
     image: busybox
@@ -369,7 +369,7 @@ services:
 
 func TestInvalidEnvironmentObject(t *testing.T) {
 	_, err := loadYAML(`
-version: "2.1"
+version: "3"
 services:
   dict-env:
     image: busybox
@@ -432,7 +432,7 @@ func TestFullExample(t *testing.T) {
 			"db:database",
 			"redis",
 		},
-		Logging: types.LoggingConfig{
+		Logging: &types.LoggingConfig{
 			Driver: "syslog",
 			Options: map[string]string{
 				"syslog-address": "tcp://192.168.0.42:123",
