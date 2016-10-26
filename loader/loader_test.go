@@ -379,6 +379,41 @@ services:
 	assert.Contains(t, err.Error(), "services.dict-env.environment must be a mapping")
 }
 
+func TestEnvironmentInterpolation(t *testing.T) {
+	config, err := loadYAML(`
+version: "3"
+services:
+  test:
+    image: busybox
+    labels:
+      - home1=$HOME
+      - home2=${HOME}
+      - nonexistent=$NONEXISTENT
+      - default=${NONEXISTENT-default}
+networks:
+  test:
+    driver: $HOME
+volumes:
+  test:
+    driver: $HOME
+`)
+
+	assert.NoError(t, err)
+
+	home := os.Getenv("HOME")
+
+	expectedLabels := map[string]string{
+		"home1":       home,
+		"home2":       home,
+		"nonexistent": "",
+		"default":     "default",
+	}
+
+	assert.Equal(t, expectedLabels, config.Services[0].Labels)
+	assert.Equal(t, home, config.Networks["test"].Driver)
+	assert.Equal(t, home, config.Volumes["test"].Driver)
+}
+
 func TestFullExample(t *testing.T) {
 	bytes, err := ioutil.ReadFile("full-example.yml")
 	assert.NoError(t, err)
