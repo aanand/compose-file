@@ -11,6 +11,10 @@ func Interpolate(config types.Dict, section string, mapping template.Mapping) (t
 	out := types.Dict{}
 
 	for name, item := range config {
+		if item == nil {
+			out[name] = nil
+			continue
+		}
 		interpolatedItem, err := interpolateSectionItem(name, item.(types.Dict), section, mapping)
 		if err != nil {
 			return nil, err
