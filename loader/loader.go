@@ -12,6 +12,7 @@ import (
 	shellwords "github.com/mattn/go-shellwords"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/aanand/compose-file/interpolation"
 	"github.com/aanand/compose-file/schema"
 	"github.com/aanand/compose-file/types"
 )
@@ -60,27 +61,45 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	if services, ok := file.Config["services"]; ok {
-		serviceMapping, err := loadServices(services.(types.Dict), configDetails.WorkingDir)
+		servicesConfig, err := interpolation.Interpolate(services.(types.Dict), "service", os.LookupEnv)
 		if err != nil {
 			return nil, err
 		}
-		cfg.Services = serviceMapping
+
+		servicesList, err := loadServices(servicesConfig, configDetails.WorkingDir)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Services = servicesList
 	}
 
 	if networks, ok := file.Config["networks"]; ok {
-		networkMapping, err := loadNetworks(networks.(types.Dict))
+		networksConfig, err := interpolation.Interpolate(networks.(types.Dict), "network", os.LookupEnv)
 		if err != nil {
 			return nil, err
 		}
-		cfg.Networks = networkMapping
+
+		networksMapping, err := loadNetworks(networksConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Networks = networksMapping
 	}
 
 	if volumes, ok := file.Config["volumes"]; ok {
-		volumeMapping, err := loadVolumes(volumes.(types.Dict))
+		volumesConfig, err := interpolation.Interpolate(volumes.(types.Dict), "volume", os.LookupEnv)
 		if err != nil {
 			return nil, err
 		}
-		cfg.Volumes = volumeMapping
+
+		volumesMapping, err := loadVolumes(volumesConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Volumes = volumesMapping
 	}
 
 	return &cfg, nil
