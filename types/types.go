@@ -22,50 +22,51 @@ type Config struct {
 type ServiceConfig struct {
 	Name string
 
-	CapAdd          []string
-	CapDrop         []string
-	CgroupParent    string
+	CapAdd          []string `mapstructure:"cap_add"`
+	CapDrop         []string `mapstructure:"cap_drop"`
+	CgroupParent    string   `mapstructure:"cgroup_parent"`
 	Command         []string `compose:"shell_command"`
-	ContainerName   string
-	DependsOn       []string
+	ContainerName   string   `mapstructure:"container_name"`
+	DependsOn       []string `mapstructure:"depends_on"`
 	Deploy          DeployConfig
 	Devices         []string
-	Dns             []string `compose:"string_or_list"`
-	DnsSearch       []string `compose:"string_or_list"`
-	DomainName      string
+	Dns             []string          `compose:"string_or_list"`
+	DnsSearch       []string          `mapstructure:"dns_search" compose:"string_or_list"`
+	DomainName      string            `mapstructure:"domainname"`
 	Entrypoint      []string          `compose:"shell_command"`
 	Environment     map[string]string `compose:"list_or_dict_equals"`
+	EnvFile         []string          `mapstructure:"env_file"`
 	Expose          []string          `compose:"list_of_strings_or_numbers"`
-	ExternalLinks   []string
-	ExtraHosts      map[string]string `compose:"list_or_dict_colon"`
+	ExternalLinks   []string          `mapstructure:"external_links"`
+	ExtraHosts      map[string]string `mapstructure:"extra_hosts" compose:"list_or_dict_colon"`
 	Hostname        string
 	Image           string
 	Ipc             string
 	Labels          map[string]string `compose:"list_or_dict_equals"`
 	Links           []string
 	Logging         *LoggingConfig
-	MacAddress      string
-	MemLimit        int `compose:"size"`
-	MemswapLimit    int `compose:"size"`
-	NetworkMode     string
+	MacAddress      string                           `mapstructure:"mac_address"`
+	MemLimit        int64                            `mapstructure:"mem_limit" compose:"size"`
+	MemswapLimit    int64                            `mapstructure:"memswap_limit" compose:"size"`
+	NetworkMode     string                           `mapstructure:"network_mode"`
 	Networks        map[string]*ServiceNetworkConfig `compose:"list_or_struct_map"`
 	Pid             string
 	Ports           []string `compose:"list_of_strings_or_numbers"`
 	Privileged      bool
-	ReadOnly        bool
+	ReadOnly        bool `mapstructure:"read_only"`
 	Restart         string
-	SecurityOpt     []string
-	ShmSize         int `compose:"size"`
-	StdinOpen       bool
-	StopGracePeriod *string
-	StopSignal      string
+	SecurityOpt     []string `mapstructure:"security_opt"`
+	ShmSize         int64    `mapstructure:"shm_size" compose:"size"`
+	StdinOpen       bool     `mapstructure:"stdin_open"`
+	StopGracePeriod *string  `mapstructure:"stop_grace_period"`
+	StopSignal      string   `mapstructure:"stop_signal"`
 	Tmpfs           []string `compose:"string_or_list"`
 	Tty             bool
-	Ulimits         map[string]*UlimitsConfig `compose:"-"`
+	Ulimits         map[string]*UlimitsConfig
 	User            string
 	Volumes         []string
-	VolumeDriver    string
-	WorkingDir      string
+	VolumeDriver    string `mapstructure:"volume_driver"`
+	WorkingDir      string `mapstructure:"working_dir"`
 }
 
 type LoggingConfig struct {
@@ -86,8 +87,8 @@ type Placement struct {
 
 type ServiceNetworkConfig struct {
 	Aliases     []string
-	Ipv4Address string
-	Ipv6Address string
+	Ipv4Address string `mapstructure:"ipv4_address"`
+	Ipv6Address string `mapstructure:"ipv6_address"`
 }
 
 type UlimitsConfig struct {
@@ -97,11 +98,11 @@ type UlimitsConfig struct {
 }
 
 type NetworkConfig struct {
-	Driver       string
-	DriverOpts   map[string]string
-	Ipam         IPAMConfig
-	ExternalName string
-	Labels       map[string]string `compose:"list_or_dict_equals"`
+	Driver     string
+	DriverOpts map[string]string `mapstructure:"driver_opts"`
+	Ipam       IPAMConfig
+	External   External
+	Labels     map[string]string `compose:"list_or_dict_equals"`
 }
 
 type IPAMConfig struct {
@@ -114,8 +115,15 @@ type IPAMPool struct {
 }
 
 type VolumeConfig struct {
-	Driver       string
-	DriverOpts   map[string]string
-	ExternalName string
-	Labels       map[string]string `compose:"list_or_dict_equals"`
+	Driver     string
+	DriverOpts map[string]string `mapstructure:"driver_opts"`
+	External   External
+	Labels     map[string]string `compose:"list_or_dict_equals"`
+}
+
+// External identifies a Volume or Network as a reference to a resource that is
+// not managed, and should already exist.
+type External struct {
+	Name     string
+	External bool
 }

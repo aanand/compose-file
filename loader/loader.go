@@ -8,13 +8,13 @@ import (
 	"regexp"
 	"strings"
 
-	units "github.com/docker/go-units"
-	shellwords "github.com/mattn/go-shellwords"
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/aanand/compose-file/interpolation"
 	"github.com/aanand/compose-file/schema"
 	"github.com/aanand/compose-file/types"
+	units "github.com/docker/go-units"
+	shellwords "github.com/mattn/go-shellwords"
+	"github.com/mitchellh/mapstructure"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -48,13 +48,14 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		return nil, fmt.Errorf("Multiple files are not yet supported")
 	}
 
-	cfg := types.Config{}
+	// TODO: support multiple files
 	file := configDetails.ConfigFiles[0]
 
 	if err := validateAgainstConfigSchema(file); err != nil {
 		return nil, err
 	}
 
+	cfg := types.Config{}
 	version := file.Config["version"].(string)
 	if version != "3" {
 		return nil, fmt.Errorf("Unsupported version: %#v. The only supported version is 3", version)
@@ -105,12 +106,51 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	return &cfg, nil
 }
 
+func transform(source map[string]interface{}, target interface{}) error {
+	data := mapstructure.Metadata{}
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: transformHook,
+		Result:     target,
+		Metadata:   &data,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(source)
+	// TODO: use logging
+	if len(data.Unused) > 0 {
+		fmt.Printf("Unused keys: %s", data.Unused)
+	}
+	return err
+}
+
+func transformHook(
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	switch target {
+	case reflect.TypeOf(types.External{}):
+		return transformExternal(source, target, data)
+	case reflect.TypeOf(make(map[string]string, 0)):
+		return transformMapStringString(source, target, data)
+	case reflect.TypeOf(types.UlimitsConfig{}):
+		return transformUlimits(source, target, data)
+	}
+	switch target.Kind() {
+	case reflect.Struct:
+		return transformStruct(source, target, data)
+	}
+	return data, nil
+}
+
 func validateAgainstConfigSchema(file types.ConfigFile) error {
 	return schema.Validate(file.Config)
 }
 
-// TODO: should this be renamed to validateStringKeys? Why do the keys need to
-// be converted?
+// keys needs to be converted to strings for jsonschema
+// TODO: don't use types.Dict
 func convertToStringKeysRecursive(value interface{}, keyPrefix string) (interface{}, error) {
 	if mapping, ok := value.(map[interface{}]interface{}); ok {
 		dict := make(types.Dict)
@@ -170,15 +210,10 @@ func loadServices(servicesDict types.Dict, workingDir string) ([]types.ServiceCo
 
 func loadService(name string, serviceDict types.Dict, workingDir string) (*types.ServiceConfig, error) {
 	serviceConfig := &types.ServiceConfig{}
-	if err := loadStruct(serviceDict, serviceConfig); err != nil {
+	if err := transform(serviceDict, serviceConfig); err != nil {
 		return nil, err
 	}
 	serviceConfig.Name = name
-
-	// Load ulimits manually
-	if ulimits, ok := serviceDict["ulimits"]; ok {
-		serviceConfig.Ulimits = loadUlimits(ulimits)
-	}
 
 	if err := resolveVolumePaths(serviceConfig.Volumes, workingDir); err != nil {
 		return nil, err
@@ -187,7 +222,6 @@ func loadService(name string, serviceDict types.Dict, workingDir string) (*types
 	return serviceConfig, nil
 }
 
-// TODO: handle invalid mappings here?
 func resolveVolumePaths(volumes []string, workingDir string) error {
 	for i, mapping := range volumes {
 		parts := strings.SplitN(mapping, ":", 2)
@@ -214,159 +248,150 @@ func expandUser(path string) string {
 	return path
 }
 
-// TODO: this should be part of the transform
-func loadUlimits(value interface{}) map[string]*types.UlimitsConfig {
-	ulimitsMap := make(map[string]*types.UlimitsConfig)
-
-	for name, item := range value.(types.Dict) {
-		config := &types.UlimitsConfig{}
-		if singleLimit, ok := item.(int); ok {
-			config.Single = singleLimit
-		} else {
-			limitDict := item.(types.Dict)
-			config.Soft = limitDict["soft"].(int)
-			config.Hard = limitDict["hard"].(int)
-		}
-		ulimitsMap[name] = config
+func transformUlimits(
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	switch value := data.(type) {
+	case int:
+		return types.UlimitsConfig{Single: value}, nil
+	case types.Dict:
+		ulimit := types.UlimitsConfig{}
+		ulimit.Soft = value["soft"].(int)
+		ulimit.Hard = value["hard"].(int)
+		return ulimit, nil
+	default:
+		return data, fmt.Errorf("invalid type %T for ulimits", value)
 	}
-
-	return ulimitsMap
 }
 
-func loadNetworks(networksDict types.Dict) (map[string]types.NetworkConfig, error) {
+func loadNetworks(source types.Dict) (map[string]types.NetworkConfig, error) {
 	networks := make(map[string]types.NetworkConfig)
-
-	for name, networkDef := range networksDict {
-		if networkDef == nil {
-			networks[name] = types.NetworkConfig{}
-		} else {
-			networkConfig, err := loadNetwork(name, networkDef.(types.Dict))
-			if err != nil {
-				return nil, err
-			}
-			networks[name] = *networkConfig
+	err := transform(source, &networks)
+	if err != nil {
+		return networks, err
+	}
+	for name, network := range networks {
+		if network.External.External && network.External.Name == "" {
+			network.External.Name = name
+			networks[name] = network
 		}
 	}
-
 	return networks, nil
 }
 
-func loadNetwork(name string, networkDict types.Dict) (*types.NetworkConfig, error) {
-	network := &types.NetworkConfig{}
-	if err := loadStruct(networkDict, network); err != nil {
-		return nil, err
-	}
-	if external, ok := networkDict["external"]; ok {
-		network.ExternalName = loadExternalName(name, external)
-	}
-	return network, nil
-}
-
-func loadVolumes(volumesDict types.Dict) (map[string]types.VolumeConfig, error) {
+func loadVolumes(source types.Dict) (map[string]types.VolumeConfig, error) {
 	volumes := make(map[string]types.VolumeConfig)
-
-	for name, volumeDef := range volumesDict {
-		if volumeDef == nil {
-			volumes[name] = types.VolumeConfig{}
-		} else {
-			volumeConfig, err := loadVolume(name, volumeDef.(types.Dict))
-			if err != nil {
-				return nil, err
-			}
-			volumes[name] = *volumeConfig
+	err := transform(source, &volumes)
+	if err != nil {
+		return volumes, err
+	}
+	for name, volume := range volumes {
+		if volume.External.External && volume.External.Name == "" {
+			volume.External.Name = name
+			volumes[name] = volume
 		}
 	}
-
 	return volumes, nil
 }
 
-func loadVolume(name string, volumeDict types.Dict) (*types.VolumeConfig, error) {
-	volume := &types.VolumeConfig{}
-	if err := loadStruct(volumeDict, volume); err != nil {
-		return nil, err
-	}
-	if external, ok := volumeDict["external"]; ok {
-		volume.ExternalName = loadExternalName(name, external)
-	}
-	return volume, nil
-}
-
-func loadExternalName(resourceName string, value interface{}) string {
-	if externalBool, ok := value.(bool); ok {
-		if externalBool {
-			return resourceName
+func transformStruct(
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	structValue, ok := data.(map[string]interface{})
+	if !ok {
+		// FIXME: this is necessary because of convertToStringKeysRecursive
+		structValue, ok = data.(types.Dict)
+		if !ok {
+			panic(fmt.Sprintf(
+				"transformStruct called with non-map type: %T, %s", data, data))
 		}
-		return ""
 	}
-	return value.(types.Dict)["name"].(string)
-}
 
-func loadStruct(dict types.Dict, dest interface{}) error {
-	structValue := reflect.ValueOf(dest).Elem()
-	structType := structValue.Type()
-
-	for i := 0; i < structType.NumField(); i++ {
-		field := structType.Field(i)
-		fieldValue := structValue.FieldByIndex([]int{i})
+	var err error
+	for i := 0; i < target.NumField(); i++ {
+		field := target.Field(i)
 		fieldTag := field.Tag.Get("compose")
 
 		yamlName := toYAMLName(field.Name)
-		value, ok := dict[yamlName]
+		value, ok := structValue[yamlName]
 		if !ok {
 			continue
 		}
 
-		if fieldTag == "list_or_dict_equals" {
-			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, "=")))
-		} else if fieldTag == "list_or_dict_colon" {
-			fieldValue.Set(reflect.ValueOf(loadMappingOrList(value, ":")))
-		} else if fieldTag == "list_or_struct_map" {
-			if err := loadListOrStructMap(value, fieldValue); err != nil {
-				return err
-			}
-		} else if fieldTag == "string_or_list" {
-			fieldValue.Set(reflect.ValueOf(loadStringOrListOfStrings(value)))
-		} else if fieldTag == "list_of_strings_or_numbers" {
-			fieldValue.Set(reflect.ValueOf(loadListOfStringsOrNumbers(value)))
-		} else if fieldTag == "shell_command" {
-			command, err := loadShellCommand(value)
-			if err != nil {
-				return err
-			}
-			fieldValue.Set(reflect.ValueOf(command))
-		} else if fieldTag == "size" {
-			size, err := loadSize(value)
-			if err != nil {
-				return err
-			}
-			fieldValue.SetInt(size)
-		} else if fieldTag == "-" {
-			// skip
-		} else if fieldTag != "" {
-			panic(fmt.Sprintf("Unrecognised field tag on %s: %s\n", field.Name, fieldTag))
-		} else if field.Type.Kind() == reflect.String {
-			fieldValue.SetString(value.(string))
-		} else if field.Type.Kind() == reflect.Bool {
-			fieldValue.SetBool(value.(bool))
-		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.String {
-			fieldValue.Set(reflect.ValueOf(loadListOfStrings(value)))
-		} else if field.Type.Kind() == reflect.Slice && field.Type.Elem().Kind() == reflect.Ptr && field.Type.Elem().Elem().Kind() == reflect.Struct {
-			if err := loadListOfStructs(value, fieldValue); err != nil {
-				return err
-			}
-		} else if field.Type.Kind() == reflect.Map && field.Type.Elem().Kind() == reflect.String {
-			fieldValue.Set(reflect.ValueOf(loadStringMapping(value)))
-		} else if field.Type.Kind() == reflect.Struct {
-			if err := loadStruct(value.(types.Dict), fieldValue.Addr().Interface()); err != nil {
-				return err
-			}
-		} else {
-			panic(fmt.Sprintf("Can't load %s (%s): don't know how to load %v",
-				field.Name, yamlName, field.Type))
+		structValue[yamlName], err = convertField(
+			fieldTag, reflect.TypeOf(value), field.Type, value)
+		if err != nil {
+			return nil, fmt.Errorf("field %s: %s", yamlName, err.Error())
 		}
 	}
+	return structValue, nil
+}
 
-	return nil
+func transformMapStringString(
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	switch value := data.(type) {
+	case map[string]interface{}:
+		return toMapStringString(value), nil
+	case types.Dict:
+		return toMapStringString(value), nil
+	case map[string]string:
+		return value, nil
+	default:
+		return data, fmt.Errorf("invalid type %T for map[string]string", value)
+	}
+}
+
+func convertField(
+	fieldTag string,
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	switch fieldTag {
+	case "":
+		return data, nil
+	case "list_or_dict_equals":
+		return loadMappingOrList(data, "="), nil
+	case "list_or_dict_colon":
+		return loadMappingOrList(data, ":"), nil
+	case "list_or_struct_map":
+		return loadListOrStructMap(data, target)
+	case "string_or_list":
+		return loadStringOrListOfStrings(data), nil
+	case "list_of_strings_or_numbers":
+		return loadListOfStringsOrNumbers(data), nil
+	case "shell_command":
+		return loadShellCommand(data)
+	case "size":
+		return loadSize(data)
+	case "-":
+		return nil, nil
+	}
+	return data, nil
+}
+
+func transformExternal(
+	source reflect.Type,
+	target reflect.Type,
+	data interface{},
+) (interface{}, error) {
+	switch value := data.(type) {
+	case bool:
+		return map[string]interface{}{"external": value}, nil
+	case types.Dict:
+		return map[string]interface{}{"external": true, "name": value["name"]}, nil
+	case map[string]interface{}:
+		return map[string]interface{}{"external": true, "name": value["name"]}, nil
+	default:
+		return data, fmt.Errorf("invalid type %T for external", value)
+	}
 }
 
 func toYAMLName(name string) string {
@@ -377,60 +402,17 @@ func toYAMLName(name string) string {
 	return strings.Join(nameParts, "_")
 }
 
-func loadStringMapping(value interface{}) map[string]string {
-	mapping := value.(types.Dict)
-	result := make(map[string]string)
-	for name, item := range mapping {
-		result[name] = toString(item)
-	}
-	return result
-}
-
-func loadListOfStrings(value interface{}) []string {
-	list := value.([]interface{})
-	result := make([]string, len(list))
-	for i, item := range list {
-		result[i] = item.(string)
-	}
-	return result
-}
-
-func loadListOfStructs(value interface{}, dest reflect.Value) error {
-	result := dest
-	listOfDicts := value.([]interface{})
-	for _, item := range listOfDicts {
-		itemStruct := reflect.New(dest.Type().Elem().Elem())
-		if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
-			return err
-		}
-		result = reflect.Append(result, itemStruct)
-	}
-	dest.Set(result)
-	return nil
-}
-
-func loadListOrStructMap(value interface{}, dest reflect.Value) error {
-	mapValue := reflect.MakeMap(dest.Type())
+func loadListOrStructMap(value interface{}, target reflect.Type) (interface{}, error) {
+	mapValue := reflect.MakeMap(target)
 
 	if list, ok := value.([]interface{}); ok {
 		for _, name := range list {
 			mapValue.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(nil))
 		}
-	} else {
-		for name, item := range value.(types.Dict) {
-			itemStruct := reflect.New(dest.Type().Elem().Elem())
-			if item != nil {
-				if err := loadStruct(item.(types.Dict), itemStruct.Interface()); err != nil {
-					return err
-				}
-			}
-			mapValue.SetMapIndex(reflect.ValueOf(name), itemStruct)
-		}
+		return mapValue.Interface(), nil
 	}
 
-	dest.Set(mapValue)
-
-	return nil
+	return value, nil
 }
 
 func loadListOfStringsOrNumbers(value interface{}) []string {
@@ -442,21 +424,19 @@ func loadListOfStringsOrNumbers(value interface{}) []string {
 	return result
 }
 
-func loadStringOrListOfStrings(value interface{}) []string {
+func loadStringOrListOfStrings(value interface{}) interface{} {
 	if _, ok := value.([]interface{}); ok {
-		return loadListOfStrings(value)
+		return value
 	}
 	return []string{value.(string)}
 }
 
 func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string {
-	result := make(map[string]string)
-
 	if mapping, ok := mappingOrList.(types.Dict); ok {
-		for name, value := range mapping {
-			result[name] = toString(value)
-		}
-	} else if list, ok := mappingOrList.([]interface{}); ok {
+		return toMapStringString(mapping)
+	}
+	if list, ok := mappingOrList.([]interface{}); ok {
+		result := make(map[string]string)
 		for _, value := range list {
 			parts := strings.SplitN(value.(string), sep, 2)
 			if len(parts) == 1 {
@@ -465,25 +445,34 @@ func loadMappingOrList(mappingOrList interface{}, sep string) map[string]string 
 				result[parts[0]] = parts[1]
 			}
 		}
-	} else {
-		panic(fmt.Errorf("expected a map or a slice, got: %#v", mappingOrList))
+		return result
 	}
-
-	return result
+	panic(fmt.Errorf("expected a map or a slice, got: %#v", mappingOrList))
 }
 
-func loadShellCommand(value interface{}) ([]string, error) {
+func loadShellCommand(value interface{}) (interface{}, error) {
 	if str, ok := value.(string); ok {
 		return shellwords.Parse(str)
 	}
-	return loadListOfStrings(value), nil
+	return value, nil
 }
 
 func loadSize(value interface{}) (int64, error) {
-	if size, ok := value.(int); ok {
-		return int64(size), nil
+	switch value := value.(type) {
+	case int:
+		return int64(value), nil
+	case string:
+		return units.RAMInBytes(value)
 	}
-	return units.RAMInBytes(value.(string))
+	panic(fmt.Errorf("invalid type for size %T", value))
+}
+
+func toMapStringString(value map[string]interface{}) map[string]string {
+	output := make(map[string]string)
+	for key, value := range value {
+		output[key] = toString(value)
+	}
+	return output
 }
 
 func toString(value interface{}) string {
