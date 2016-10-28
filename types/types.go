@@ -35,7 +35,6 @@ type ServiceConfig struct {
 	DomainName      string            `mapstructure:"domainname"`
 	Entrypoint      []string          `compose:"shell_command"`
 	Environment     map[string]string `compose:"list_or_dict_equals"`
-	EnvFile         []string          `mapstructure:"env_file"`
 	Expose          []string          `compose:"list_of_strings_or_numbers"`
 	ExternalLinks   []string          `mapstructure:"external_links"`
 	ExtraHosts      map[string]string `mapstructure:"extra_hosts" compose:"list_or_dict_colon"`

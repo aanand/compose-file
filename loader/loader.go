@@ -11,6 +11,7 @@ import (
 	"github.com/aanand/compose-file/interpolation"
 	"github.com/aanand/compose-file/schema"
 	"github.com/aanand/compose-file/types"
+	"github.com/docker/docker/runconfig/opts"
 	units "github.com/docker/go-units"
 	shellwords "github.com/mattn/go-shellwords"
 	"github.com/mitchellh/mapstructure"
@@ -215,11 +216,46 @@ func loadService(name string, serviceDict types.Dict, workingDir string) (*types
 	}
 	serviceConfig.Name = name
 
+	if err := resolveEnvironment(serviceConfig, serviceDict, workingDir); err != nil {
+		return nil, err
+	}
+
 	if err := resolveVolumePaths(serviceConfig.Volumes, workingDir); err != nil {
 		return nil, err
 	}
 
 	return serviceConfig, nil
+}
+
+func resolveEnvironment(serviceConfig *types.ServiceConfig, serviceDict types.Dict, workingDir string) error {
+	environment := make(map[string]string)
+
+	if envFileVal, ok := serviceDict["env_file"]; ok {
+		envFiles := loadStringOrListOfStrings(envFileVal)
+
+		var envVars []string
+
+		for _, file := range envFiles {
+			filePath := path.Join(workingDir, file)
+			fileVars, err := opts.ParseEnvFile(filePath)
+			if err != nil {
+				return err
+			}
+			envVars = append(envVars, fileVars...)
+		}
+
+		for k, v := range opts.ConvertKVStringsToMap(envVars) {
+			environment[k] = v
+		}
+	}
+
+	for k, v := range serviceConfig.Environment {
+		environment[k] = v
+	}
+
+	serviceConfig.Environment = environment
+
+	return nil
 }
 
 func resolveVolumePaths(volumes []string, workingDir string) error {
@@ -424,9 +460,13 @@ func loadListOfStringsOrNumbers(value interface{}) []string {
 	return result
 }
 
-func loadStringOrListOfStrings(value interface{}) interface{} {
-	if _, ok := value.([]interface{}); ok {
-		return value
+func loadStringOrListOfStrings(value interface{}) []string {
+	if list, ok := value.([]interface{}); ok {
+		result := make([]string, len(list))
+		for i, item := range list {
+			result[i] = fmt.Sprint(item)
+		}
+		return result
 	}
 	return []string{value.(string)}
 }

@@ -45,9 +45,8 @@ services:
     # String or list
     # env_file: .env
     env_file:
-      - ./common.env
-      - ./apps/web.env
-      - /opt/secrets.env
+      - ./example1.env
+      - ./example2.env
 
     # Mapping or list
     # Mapping values can be strings, numbers or null
@@ -56,6 +55,7 @@ services:
       RACK_ENV: development
       SHOW: 'true'
       SESSION_SECRET:
+      BAZ: 3
     # environment:
     #   - RACK_ENV=development
     #   - SHOW=true
