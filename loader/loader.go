@@ -140,6 +140,8 @@ func transformHook(
 		return transformMapStringString(source, target, data)
 	case reflect.TypeOf(types.UlimitsConfig{}):
 		return transformUlimits(source, target, data)
+	case reflect.TypeOf(types.UnitBytes(0)):
+		return loadSize(data)
 	}
 	switch target.Kind() {
 	case reflect.Struct:
