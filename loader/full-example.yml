@@ -228,9 +228,6 @@ services:
       # Named volume
       - datavolume:/var/lib/mysql
 
-    # Only permitted if no host path volumes have been specified
-    volume_driver: mydriver
-
     working_dir: /code
 
 networks:
