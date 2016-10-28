@@ -110,9 +110,11 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 func transform(source map[string]interface{}, target interface{}) error {
 	data := mapstructure.Metadata{}
 	config := &mapstructure.DecoderConfig{
-		DecodeHook: transformHook,
-		Result:     target,
-		Metadata:   &data,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			transformHook,
+			mapstructure.StringToTimeDurationHookFunc()),
+		Result:   target,
+		Metadata: &data,
 	}
 	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {

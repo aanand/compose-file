@@ -169,6 +169,8 @@ services:
 
     stdin_open: true
 
+    stop_grace_period: 20s
+
     stop_signal: SIGUSR1
 
     # String or list

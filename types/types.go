@@ -1,5 +1,9 @@
 package types
 
+import (
+	"time"
+)
+
 type Dict map[string]interface{}
 
 type ConfigFile struct {
@@ -54,12 +58,12 @@ type ServiceConfig struct {
 	Privileged      bool
 	ReadOnly        bool `mapstructure:"read_only"`
 	Restart         string
-	SecurityOpt     []string `mapstructure:"security_opt"`
-	ShmSize         int64    `mapstructure:"shm_size" compose:"size"`
-	StdinOpen       bool     `mapstructure:"stdin_open"`
-	StopGracePeriod *string  `mapstructure:"stop_grace_period"`
-	StopSignal      string   `mapstructure:"stop_signal"`
-	Tmpfs           []string `compose:"string_or_list"`
+	SecurityOpt     []string       `mapstructure:"security_opt"`
+	ShmSize         int64          `mapstructure:"shm_size" compose:"size"`
+	StdinOpen       bool           `mapstructure:"stdin_open"`
+	StopGracePeriod *time.Duration `mapstructure:"stop_grace_period"`
+	StopSignal      string         `mapstructure:"stop_signal"`
+	Tmpfs           []string       `compose:"string_or_list"`
 	Tty             bool
 	Ulimits         map[string]*UlimitsConfig
 	User            string
