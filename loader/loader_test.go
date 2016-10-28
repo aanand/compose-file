@@ -97,7 +97,7 @@ var sampleConfig = types.Config{
 		{
 			Name:        "foo",
 			Image:       "busybox",
-			Environment: nil,
+			Environment: map[string]string{},
 		},
 		{
 			Name:        "bar",
@@ -452,9 +452,11 @@ func TestFullExample(t *testing.T) {
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
 			"SESSION_SECRET": "",
+			"FOO":            "1",
+			"BAR":            "2",
+			"BAZ":            "3",
 		},
-		EnvFile: []string{"./common.env", "./apps/web.env", "/opt/secrets.env"},
-		Expose:  []string{"3000", "8000"},
+		Expose: []string{"3000", "8000"},
 		ExternalLinks: []string{
 			"redis_1",
 			"project_db_1:mysql",
