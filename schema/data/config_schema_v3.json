@@ -241,7 +241,7 @@
       "type": "object",
       "properties": {
         "cpus": {"type": "string"},
-        "bytes": {"type": "string"}
+        "memory": {"type": "string"}
       },
       "additionaProperties": false
     },

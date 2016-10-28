@@ -6,10 +6,10 @@ import (
 	"os"
 	"sort"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 
 	"github.com/aanand/compose-file/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func buildConfigDetails(source types.Dict) types.ConfigDetails {
@@ -433,6 +433,7 @@ func TestFullExample(t *testing.T) {
 	assert.NoError(t, err)
 
 	homeDir := os.Getenv("HOME")
+	stopGracePeriod := time.Duration(20 * time.Second)
 
 	expectedServiceConfig := types.ServiceConfig{
 		Name: "foo",
@@ -443,11 +444,42 @@ func TestFullExample(t *testing.T) {
 		Command:       []string{"bundle", "exec", "thin", "-p", "3000"},
 		ContainerName: "my-web-container",
 		DependsOn:     []string{"db", "redis"},
-		Devices:       []string{"/dev/ttyUSB0:/dev/ttyUSB0"},
-		Dns:           []string{"8.8.8.8", "9.9.9.9"},
-		DnsSearch:     []string{"dc1.example.com", "dc2.example.com"},
-		DomainName:    "foo.com",
-		Entrypoint:    []string{"/code/entrypoint.sh", "-p", "3000"},
+		Deploy: types.DeployConfig{
+			Mode:     "replicated",
+			Replicas: uint64(6),
+			Labels:   map[string]string{"FOO": "BAR"},
+			UpdateConfig: &types.UpdateConfig{
+				Parallelism:     int64(3),
+				Delay:           time.Duration(10 * time.Second),
+				FailureAction:   "continue",
+				Monitor:         time.Duration(60 * time.Second),
+				MaxFailureRatio: 0.3,
+			},
+			Resources: types.Resources{
+				Limits: &types.Resource{
+					NanoCPUs:    "0.001",
+					MemoryBytes: 50 * 1024 * 1024,
+				},
+				Reservations: &types.Resource{
+					NanoCPUs:    "0.0001",
+					MemoryBytes: 20 * 1024 * 1024,
+				},
+			},
+			RestartPolicy: &types.RestartPolicy{
+				Condition:   "on_failure",
+				Delay:       time.Duration(5 * time.Second),
+				MaxAttempts: int64(3),
+				Window:      time.Duration(2 * time.Minute),
+			},
+			Placement: types.Placement{
+				Constraints: []string{"node=foo"},
+			},
+		},
+		Devices:    []string{"/dev/ttyUSB0:/dev/ttyUSB0"},
+		Dns:        []string{"8.8.8.8", "9.9.9.9"},
+		DnsSearch:  []string{"dc1.example.com", "dc2.example.com"},
+		DomainName: "foo.com",
+		Entrypoint: []string{"/code/entrypoint.sh", "-p", "3000"},
 		Environment: map[string]string{
 			"RACK_ENV":       "development",
 			"SHOW":           "true",
@@ -518,11 +550,12 @@ func TestFullExample(t *testing.T) {
 			"label=level:s0:c100,c200",
 			"label=type:svirt_apache_t",
 		},
-		ShmSize:    67108864,
-		StdinOpen:  true,
-		StopSignal: "SIGUSR1",
-		Tmpfs:      []string{"/run", "/tmp"},
-		Tty:        true,
+		ShmSize:         67108864,
+		StdinOpen:       true,
+		StopSignal:      "SIGUSR1",
+		StopGracePeriod: &stopGracePeriod,
+		Tmpfs:           []string{"/run", "/tmp"},
+		Tty:             true,
 		Ulimits: map[string]*types.UlimitsConfig{
 			"nproc": {
 				Single: 65535,

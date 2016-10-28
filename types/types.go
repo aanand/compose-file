@@ -1,5 +1,9 @@
 package types
 
+import (
+	"time"
+)
+
 type Dict map[string]interface{}
 
 type ConfigFile struct {
@@ -54,12 +58,12 @@ type ServiceConfig struct {
 	Privileged      bool
 	ReadOnly        bool `mapstructure:"read_only"`
 	Restart         string
-	SecurityOpt     []string `mapstructure:"security_opt"`
-	ShmSize         int64    `mapstructure:"shm_size" compose:"size"`
-	StdinOpen       bool     `mapstructure:"stdin_open"`
-	StopGracePeriod *string  `mapstructure:"stop_grace_period"`
-	StopSignal      string   `mapstructure:"stop_signal"`
-	Tmpfs           []string `compose:"string_or_list"`
+	SecurityOpt     []string       `mapstructure:"security_opt"`
+	ShmSize         int64          `mapstructure:"shm_size" compose:"size"`
+	StdinOpen       bool           `mapstructure:"stdin_open"`
+	StopGracePeriod *time.Duration `mapstructure:"stop_grace_period"`
+	StopSignal      string         `mapstructure:"stop_signal"`
+	Tmpfs           []string       `compose:"string_or_list"`
 	Tty             bool
 	Ulimits         map[string]*UlimitsConfig
 	User            string
@@ -74,10 +78,41 @@ type LoggingConfig struct {
 }
 
 type DeployConfig struct {
-	Mode      string
-	Replicas  uint64
-	Labels    map[string]string `compose:"list_or_dict_equals"`
-	Placement Placement
+	Mode          string
+	Replicas      uint64
+	Labels        map[string]string `compose:"list_or_dict_equals"`
+	UpdateConfig  *UpdateConfig     `mapstructure:"update_config"`
+	Resources     Resources
+	RestartPolicy *RestartPolicy `mapstructure:"restart_policy"`
+	Placement     Placement
+}
+
+type UpdateConfig struct {
+	Parallelism     int64
+	Delay           time.Duration
+	FailureAction   string `mapstructure:"failure_action"`
+	Monitor         time.Duration
+	MaxFailureRatio float64 `mapstructure:"max_failure_ratio"`
+}
+
+type Resources struct {
+	Limits       *Resource
+	Reservations *Resource
+}
+
+type Resource struct {
+	// TODO: types to convert from units and ratios
+	NanoCPUs    string    `mapstructure:"cpus"`
+	MemoryBytes UnitBytes `mapstructure:"memory"`
+}
+
+type UnitBytes int64
+
+type RestartPolicy struct {
+	Condition   string
+	Delay       time.Duration
+	MaxAttempts int64 `mapstructure:"max_attempts"`
+	Window      time.Duration
 }
 
 type Placement struct {
