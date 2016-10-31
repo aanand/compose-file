@@ -129,11 +129,11 @@ type DeployConfig struct {
 }
 
 type UpdateConfig struct {
-	Parallelism     int64
+	Parallelism     uint64
 	Delay           time.Duration
 	FailureAction   string `mapstructure:"failure_action"`
 	Monitor         time.Duration
-	MaxFailureRatio float64 `mapstructure:"max_failure_ratio"`
+	MaxFailureRatio float32 `mapstructure:"max_failure_ratio"`
 }
 
 type Resources struct {
@@ -151,9 +151,9 @@ type UnitBytes int64
 
 type RestartPolicy struct {
 	Condition   string
-	Delay       time.Duration
-	MaxAttempts int64 `mapstructure:"max_attempts"`
-	Window      time.Duration
+	Delay       *time.Duration
+	MaxAttempts *int64 `mapstructure:"max_attempts"`
+	Window      *time.Duration
 }
 
 type Placement struct {

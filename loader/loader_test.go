@@ -489,6 +489,14 @@ services:
 	assert.Contains(t, forbidden, "extends")
 }
 
+func durationPtr(value time.Duration) *time.Duration {
+	return &value
+}
+
+func int64Ptr(value int64) *int64 {
+	return &value
+}
+
 func TestFullExample(t *testing.T) {
 	bytes, err := ioutil.ReadFile("full-example.yml")
 	assert.NoError(t, err)
@@ -518,7 +526,7 @@ func TestFullExample(t *testing.T) {
 			Replicas: uint64(6),
 			Labels:   map[string]string{"FOO": "BAR"},
 			UpdateConfig: &types.UpdateConfig{
-				Parallelism:     int64(3),
+				Parallelism:     uint64(3),
 				Delay:           time.Duration(10 * time.Second),
 				FailureAction:   "continue",
 				Monitor:         time.Duration(60 * time.Second),
@@ -536,9 +544,9 @@ func TestFullExample(t *testing.T) {
 			},
 			RestartPolicy: &types.RestartPolicy{
 				Condition:   "on_failure",
-				Delay:       time.Duration(5 * time.Second),
-				MaxAttempts: int64(3),
-				Window:      time.Duration(2 * time.Minute),
+				Delay:       durationPtr(5 * time.Second),
+				MaxAttempts: int64Ptr(3),
+				Window:      durationPtr(2 * time.Minute),
 			},
 			Placement: types.Placement{
 				Constraints: []string{"node=foo"},
