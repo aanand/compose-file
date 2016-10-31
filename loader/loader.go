@@ -198,10 +198,7 @@ func transform(source map[string]interface{}, target interface{}) error {
 		return err
 	}
 	err = decoder.Decode(source)
-	// TODO: use logging
-	if len(data.Unused) > 0 {
-		fmt.Printf("Unused keys: %s", data.Unused)
-	}
+	// TODO: log unused keys
 	return err
 }
 
