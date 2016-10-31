@@ -50,10 +50,9 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		return nil, fmt.Errorf("Multiple files are not yet supported")
 	}
 
-	// TODO: support multiple files
-	file := configDetails.ConfigFiles[0]
+	configDict := getConfigDict(configDetails)
 
-	if services, ok := file.Config["services"]; ok {
+	if services, ok := configDict["services"]; ok {
 		if servicesDict, ok := services.(types.Dict); ok {
 			forbidden := getProperties(servicesDict, types.ForbiddenProperties)
 
@@ -63,17 +62,17 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		}
 	}
 
-	if err := validateAgainstConfigSchema(file); err != nil {
+	if err := schema.Validate(configDict); err != nil {
 		return nil, err
 	}
 
 	cfg := types.Config{}
-	version := file.Config["version"].(string)
+	version := configDict["version"].(string)
 	if version != "3" {
 		return nil, fmt.Errorf("Unsupported version: %#v. The only supported version is 3", version)
 	}
 
-	if services, ok := file.Config["services"]; ok {
+	if services, ok := configDict["services"]; ok {
 		servicesConfig, err := interpolation.Interpolate(services.(types.Dict), "service", os.LookupEnv)
 		if err != nil {
 			return nil, err
@@ -87,7 +86,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		cfg.Services = servicesList
 	}
 
-	if networks, ok := file.Config["networks"]; ok {
+	if networks, ok := configDict["networks"]; ok {
 		networksConfig, err := interpolation.Interpolate(networks.(types.Dict), "network", os.LookupEnv)
 		if err != nil {
 			return nil, err
@@ -101,7 +100,7 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 		cfg.Networks = networksMapping
 	}
 
-	if volumes, ok := file.Config["volumes"]; ok {
+	if volumes, ok := configDict["volumes"]; ok {
 		volumesConfig, err := interpolation.Interpolate(volumes.(types.Dict), "volume", os.LookupEnv)
 		if err != nil {
 			return nil, err
@@ -118,10 +117,10 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	return &cfg, nil
 }
 
-func GetUnsupportedProperties(services types.Dict) []string {
+func GetUnsupportedProperties(configDetails types.ConfigDetails) []string {
 	unsupported := map[string]bool{}
 
-	for _, service := range services {
+	for _, service := range getServices(getConfigDict(configDetails)) {
 		serviceDict := service.(types.Dict)
 		for _, property := range types.UnsupportedProperties {
 			if _, isSet := serviceDict[property]; isSet {
@@ -142,8 +141,8 @@ func sortedKeys(set map[string]bool) []string {
 	return keys
 }
 
-func GetDeprecatedProperties(services types.Dict) map[string]string {
-	return getProperties(services, types.DeprecatedProperties)
+func GetDeprecatedProperties(configDetails types.ConfigDetails) map[string]string {
+	return getProperties(getServices(getConfigDict(configDetails)), types.DeprecatedProperties)
 }
 
 func getProperties(services types.Dict, propertyMap map[string]string) map[string]string {
@@ -168,6 +167,21 @@ type ForbiddenPropertiesError struct {
 
 func (e *ForbiddenPropertiesError) Error() string {
 	return "Configuration contains forbidden properties"
+}
+
+// TODO: resolve multiple files into a single config
+func getConfigDict(configDetails types.ConfigDetails) types.Dict {
+	return configDetails.ConfigFiles[0].Config
+}
+
+func getServices(configDict types.Dict) types.Dict {
+	if services, ok := configDict["services"]; ok {
+		if servicesDict, ok := services.(types.Dict); ok {
+			return servicesDict
+		}
+	}
+
+	return types.Dict{}
 }
 
 func transform(source map[string]interface{}, target interface{}) error {
@@ -211,10 +225,6 @@ func transformHook(
 		return transformStruct(source, target, data)
 	}
 	return data, nil
-}
-
-func validateAgainstConfigSchema(file types.ConfigFile) error {
-	return schema.Validate(file.Config)
 }
 
 // keys needs to be converted to strings for jsonschema

@@ -435,10 +435,12 @@ services:
 `))
 	assert.NoError(t, err)
 
-	_, err = Load(buildConfigDetails(dict))
+	configDetails := buildConfigDetails(dict)
+
+	_, err = Load(configDetails)
 	assert.NoError(t, err)
 
-	unsupported := GetUnsupportedProperties(dict["services"].(types.Dict))
+	unsupported := GetUnsupportedProperties(configDetails)
 	assert.Equal(t, []string{"build", "links"}, unsupported)
 }
 
@@ -456,10 +458,12 @@ services:
 `))
 	assert.NoError(t, err)
 
-	_, err = Load(buildConfigDetails(dict))
+	configDetails := buildConfigDetails(dict)
+
+	_, err = Load(configDetails)
 	assert.NoError(t, err)
 
-	deprecated := GetDeprecatedProperties(dict["services"].(types.Dict))
+	deprecated := GetDeprecatedProperties(configDetails)
 	assert.Equal(t, 2, len(deprecated))
 	assert.Contains(t, deprecated, "container_name")
 	assert.Contains(t, deprecated, "expose")
