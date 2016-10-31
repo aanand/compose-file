@@ -6,6 +6,7 @@ import (
 	"path"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/aanand/compose-file/interpolation"
@@ -51,6 +52,16 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 
 	// TODO: support multiple files
 	file := configDetails.ConfigFiles[0]
+
+	if services, ok := file.Config["services"]; ok {
+		if servicesDict, ok := services.(types.Dict); ok {
+			forbidden := getProperties(servicesDict, types.ForbiddenProperties)
+
+			if len(forbidden) > 0 {
+				return nil, &ForbiddenPropertiesError{Properties: forbidden}
+			}
+		}
+	}
 
 	if err := validateAgainstConfigSchema(file); err != nil {
 		return nil, err
@@ -105,6 +116,58 @@ func Load(configDetails types.ConfigDetails) (*types.Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func GetUnsupportedProperties(services types.Dict) []string {
+	unsupported := map[string]bool{}
+
+	for _, service := range services {
+		serviceDict := service.(types.Dict)
+		for _, property := range types.UnsupportedProperties {
+			if _, isSet := serviceDict[property]; isSet {
+				unsupported[property] = true
+			}
+		}
+	}
+
+	return sortedKeys(unsupported)
+}
+
+func sortedKeys(set map[string]bool) []string {
+	var keys []string
+	for key, _ := range set {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func GetDeprecatedProperties(services types.Dict) map[string]string {
+	return getProperties(services, types.DeprecatedProperties)
+}
+
+func getProperties(services types.Dict, propertyMap map[string]string) map[string]string {
+	output := map[string]string{}
+
+	for _, service := range services {
+		if serviceDict, ok := service.(types.Dict); ok {
+			for property, description := range propertyMap {
+				if _, isSet := serviceDict[property]; isSet {
+					output[property] = description
+				}
+			}
+		}
+	}
+
+	return output
+}
+
+type ForbiddenPropertiesError struct {
+	Properties map[string]string
+}
+
+func (e *ForbiddenPropertiesError) Error() string {
+	return "Configuration contains forbidden properties"
 }
 
 func transform(source map[string]interface{}, target interface{}) error {

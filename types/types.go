@@ -4,6 +4,48 @@ import (
 	"time"
 )
 
+var UnsupportedProperties = []string{
+	"build",
+	"cap_add",
+	"cap_drop",
+	"cgroup_parent",
+	"cpu_quota",
+	"cpu_shares",
+	"cpuset",
+	"devices",
+	"dns",
+	"dns_search",
+	"domainname",
+	"external_links",
+	"extra_hosts",
+	"ipc",
+	"links",
+	"mac_address",
+	"mem_limit",
+	"memswap_limit",
+	"network_mode",
+	"privileged",
+	"read_only",
+	"restart",
+	"security_opt",
+	"shm_size",
+	"stdin_open",
+	"stop_signal",
+	"tmpfs",
+	"tty",
+}
+
+var DeprecatedProperties = map[string]string{
+	"container_name": "Setting the container name is not supported.",
+	"expose":         "Manually exposing ports is unnecessary - services on the same network can access each other's containers on any port.",
+}
+
+var ForbiddenProperties = map[string]string{
+	"extends":       "Support for `extends` is not implemented yet. Use `docker-compose config` to generate a configuration with all `extends` options resolved, and deploy from that.",
+	"volume_driver": "Instead of setting the volume driver on the service, define a volume using the top-level `volumes` option and specify the driver there.",
+	"volumes_from":  "To share a volume between services, define it using the top-level `volumes` option and reference it from each service that shares it using the service-level `volumes` option.",
+}
+
 type Dict map[string]interface{}
 
 type ConfigFile struct {
@@ -68,7 +110,6 @@ type ServiceConfig struct {
 	Ulimits         map[string]*UlimitsConfig
 	User            string
 	Volumes         []string
-	VolumeDriver    string `mapstructure:"volume_driver"`
 	WorkingDir      string `mapstructure:"working_dir"`
 }
 

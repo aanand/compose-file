@@ -420,6 +420,75 @@ volumes:
 	assert.Equal(t, home, config.Volumes["test"].Driver)
 }
 
+func TestUnsupportedProperties(t *testing.T) {
+	dict, err := ParseYAML([]byte(`
+version: "3"
+services:
+  web:
+    image: web
+    build: ./web
+    links:
+      - bar
+  db:
+    image: db
+    build: ./db
+`))
+	assert.NoError(t, err)
+
+	_, err = Load(buildConfigDetails(dict))
+	assert.NoError(t, err)
+
+	unsupported := GetUnsupportedProperties(dict["services"].(types.Dict))
+	assert.Equal(t, []string{"build", "links"}, unsupported)
+}
+
+func TestDeprecatedProperties(t *testing.T) {
+	dict, err := ParseYAML([]byte(`
+version: "3"
+services:
+  web:
+    image: web
+    container_name: web
+  db:
+    image: db
+    container_name: db
+    expose: ["5434"]
+`))
+	assert.NoError(t, err)
+
+	_, err = Load(buildConfigDetails(dict))
+	assert.NoError(t, err)
+
+	deprecated := GetDeprecatedProperties(dict["services"].(types.Dict))
+	assert.Equal(t, 2, len(deprecated))
+	assert.Contains(t, deprecated, "container_name")
+	assert.Contains(t, deprecated, "expose")
+}
+
+func TestForbiddenProperties(t *testing.T) {
+	_, err := loadYAML(`
+version: "3"
+services:
+  foo:
+    image: busybox
+    volumes:
+      - /data
+    volume_driver: some-driver
+  bar:
+    extends:
+      service: foo
+`)
+
+	assert.Error(t, err)
+	assert.IsType(t, &ForbiddenPropertiesError{}, err)
+	fmt.Println(err)
+	forbidden := err.(*ForbiddenPropertiesError).Properties
+
+	assert.Equal(t, 2, len(forbidden))
+	assert.Contains(t, forbidden, "volume_driver")
+	assert.Contains(t, forbidden, "extends")
+}
+
 func TestFullExample(t *testing.T) {
 	bytes, err := ioutil.ReadFile("full-example.yml")
 	assert.NoError(t, err)
@@ -574,8 +643,7 @@ func TestFullExample(t *testing.T) {
 			fmt.Sprintf("%s/configs:/etc/configs/:ro", homeDir),
 			"datavolume:/var/lib/mysql",
 		},
-		VolumeDriver: "mydriver",
-		WorkingDir:   "/code",
+		WorkingDir: "/code",
 	}
 
 	assert.Equal(t, []types.ServiceConfig{expectedServiceConfig}, config.Services)
