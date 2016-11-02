@@ -9,9 +9,6 @@ var UnsupportedProperties = []string{
 	"cap_add",
 	"cap_drop",
 	"cgroup_parent",
-	"cpu_quota",
-	"cpu_shares",
-	"cpuset",
 	"devices",
 	"dns",
 	"dns_search",
@@ -21,8 +18,6 @@ var UnsupportedProperties = []string{
 	"ipc",
 	"links",
 	"mac_address",
-	"mem_limit",
-	"memswap_limit",
 	"network_mode",
 	"privileged",
 	"read_only",
@@ -37,13 +32,18 @@ var UnsupportedProperties = []string{
 
 var DeprecatedProperties = map[string]string{
 	"container_name": "Setting the container name is not supported.",
-	"expose":         "Manually exposing ports is unnecessary - services on the same network can access each other's containers on any port.",
+	"expose":         "Exposing ports is unnecessary - services on the same network can access each other's containers on any port.",
 }
 
 var ForbiddenProperties = map[string]string{
 	"extends":       "Support for `extends` is not implemented yet. Use `docker-compose config` to generate a configuration with all `extends` options resolved, and deploy from that.",
 	"volume_driver": "Instead of setting the volume driver on the service, define a volume using the top-level `volumes` option and specify the driver there.",
 	"volumes_from":  "To share a volume between services, define it using the top-level `volumes` option and reference it from each service that shares it using the service-level `volumes` option.",
+	"cpu_quota":     "Set resource limits using deploy.resources",
+	"cpu_shares":    "Set resource limits using deploy.resources",
+	"cpuset":        "Set resource limits using deploy.resources",
+	"mem_limit":     "Set resource limits using deploy.resources",
+	"memswap_limit": "Set resource limits using deploy.resources",
 }
 
 type Dict map[string]interface{}
@@ -91,8 +91,6 @@ type ServiceConfig struct {
 	Links           []string
 	Logging         *LoggingConfig
 	MacAddress      string                           `mapstructure:"mac_address"`
-	MemLimit        int64                            `mapstructure:"mem_limit" compose:"size"`
-	MemswapLimit    int64                            `mapstructure:"memswap_limit" compose:"size"`
 	NetworkMode     string                           `mapstructure:"network_mode"`
 	Networks        map[string]*ServiceNetworkConfig `compose:"list_or_struct_map"`
 	Pid             string
@@ -101,7 +99,6 @@ type ServiceConfig struct {
 	ReadOnly        bool `mapstructure:"read_only"`
 	Restart         string
 	SecurityOpt     []string       `mapstructure:"security_opt"`
-	ShmSize         int64          `mapstructure:"shm_size" compose:"size"`
 	StdinOpen       bool           `mapstructure:"stdin_open"`
 	StopGracePeriod *time.Duration `mapstructure:"stop_grace_period"`
 	StopSignal      string         `mapstructure:"stop_signal"`
