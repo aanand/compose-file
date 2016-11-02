@@ -152,7 +152,7 @@ type UnitBytes int64
 type RestartPolicy struct {
 	Condition   string
 	Delay       *time.Duration
-	MaxAttempts *int64 `mapstructure:"max_attempts"`
+	MaxAttempts *uint64 `mapstructure:"max_attempts"`
 	Window      *time.Duration
 }
 
