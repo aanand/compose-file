@@ -140,14 +140,6 @@ services:
 
     mac_address: 02:42:ac:11:65:43
 
-    # Number or string with size specifier
-    mem_limit: 1G
-    # mem_limit: 1073741824
-
-    # Number or string with size specifier
-    memswap_limit: 2G
-    # memswap_limit: 2147483648
-
     # network_mode: "bridge"
     # network_mode: "host"
     # network_mode: "none"
@@ -187,10 +179,6 @@ services:
     security_opt:
       - label=level:s0:c100,c200
       - label=type:svirt_apache_t
-
-    # Number or string with size specifier
-    # shm_size: 67108864
-    shm_size: 64M
 
     stdin_open: true
 

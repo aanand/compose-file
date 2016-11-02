@@ -602,10 +602,8 @@ func TestFullExample(t *testing.T) {
 				"syslog-address": "tcp://192.168.0.42:123",
 			},
 		},
-		MacAddress:   "02:42:ac:11:65:43",
-		MemLimit:     1073741824,
-		MemswapLimit: 2147483648,
-		NetworkMode:  "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
+		MacAddress:  "02:42:ac:11:65:43",
+		NetworkMode: "container:0cfeab0f748b9a743dc3da582046357c6ef497631c1a016d28d2bf9b4f899f7b",
 		Networks: map[string]*types.ServiceNetworkConfig{
 			"some-network": {
 				Aliases:     []string{"alias1", "alias3"},
@@ -635,7 +633,6 @@ func TestFullExample(t *testing.T) {
 			"label=level:s0:c100,c200",
 			"label=type:svirt_apache_t",
 		},
-		ShmSize:         67108864,
 		StdinOpen:       true,
 		StopSignal:      "SIGUSR1",
 		StopGracePeriod: &stopGracePeriod,
