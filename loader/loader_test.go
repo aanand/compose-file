@@ -501,6 +501,10 @@ func int64Ptr(value int64) *int64 {
 	return &value
 }
 
+func uint64Ptr(value uint64) *uint64 {
+	return &value
+}
+
 func TestFullExample(t *testing.T) {
 	bytes, err := ioutil.ReadFile("full-example.yml")
 	assert.NoError(t, err)
@@ -527,7 +531,7 @@ func TestFullExample(t *testing.T) {
 		DependsOn:     []string{"db", "redis"},
 		Deploy: types.DeployConfig{
 			Mode:     "replicated",
-			Replicas: uint64(6),
+			Replicas: uint64Ptr(6),
 			Labels:   map[string]string{"FOO": "BAR"},
 			UpdateConfig: &types.UpdateConfig{
 				Parallelism:     uint64(3),
