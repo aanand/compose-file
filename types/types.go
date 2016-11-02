@@ -120,7 +120,7 @@ type LoggingConfig struct {
 
 type DeployConfig struct {
 	Mode          string
-	Replicas      uint64
+	Replicas      *uint64
 	Labels        map[string]string `compose:"list_or_dict_equals"`
 	UpdateConfig  *UpdateConfig     `mapstructure:"update_config"`
 	Resources     Resources
