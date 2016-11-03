@@ -27,7 +27,6 @@ var UnsupportedProperties = []string{
 	"stdin_open",
 	"stop_signal",
 	"tmpfs",
-	"tty",
 }
 
 var DeprecatedProperties = map[string]string{
@@ -103,7 +102,7 @@ type ServiceConfig struct {
 	StopGracePeriod *time.Duration `mapstructure:"stop_grace_period"`
 	StopSignal      string         `mapstructure:"stop_signal"`
 	Tmpfs           []string       `compose:"string_or_list"`
-	Tty             bool
+	Tty             bool           `mapstructure:"tty"`
 	Ulimits         map[string]*UlimitsConfig
 	User            string
 	Volumes         []string
