@@ -24,7 +24,6 @@ var UnsupportedProperties = []string{
 	"restart",
 	"security_opt",
 	"shm_size",
-	"stdin_open",
 	"stop_signal",
 	"tmpfs",
 }
