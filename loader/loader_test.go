@@ -553,7 +553,7 @@ func TestFullExample(t *testing.T) {
 			RestartPolicy: &types.RestartPolicy{
 				Condition:   "on_failure",
 				Delay:       durationPtr(5 * time.Second),
-				MaxAttempts: int64Ptr(3),
+				MaxAttempts: uint64Ptr(3),
 				Window:      durationPtr(2 * time.Minute),
 			},
 			Placement: types.Placement{
