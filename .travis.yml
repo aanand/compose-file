@@ -1,0 +1,12 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - curl -L https://github.com/dnephin/dobi/releases/download/v0.8/dobi-linux > ./dobi
+  - chmod +x ./dobi
+  - ./dobi deps
+
+script:
+  - ./dobi test
