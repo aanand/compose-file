@@ -583,6 +583,15 @@ func TestFullExample(t *testing.T) {
 			"otherhost": "50.31.209.229",
 			"somehost":  "162.242.195.82",
 		},
+		HealthCheck: &types.HealthCheckConfig{
+			Command: []string{
+				"cat",
+				"/etc/passwd",
+			},
+			Interval: "10s",
+			Timeout:  "1s",
+			Retries:  uint64Ptr(5),
+		},
 		Hostname: "foo",
 		Image:    "redis",
 		Ipc:      "host",

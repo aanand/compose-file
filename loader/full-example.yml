@@ -107,6 +107,12 @@ services:
 
     hostname: foo
 
+    healthcheck:
+      command: cat /etc/passwd
+      interval: 10s
+      timeout: 1s
+      retries: 5
+
     # Any valid image reference - repo, tag, id, sha
     image: redis
     # image: ubuntu:14.04
