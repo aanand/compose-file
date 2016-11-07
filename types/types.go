@@ -84,6 +84,7 @@ type ServiceConfig struct {
 	ExternalLinks   []string          `mapstructure:"external_links"`
 	ExtraHosts      map[string]string `mapstructure:"extra_hosts" compose:"list_or_dict_colon"`
 	Hostname        string
+	HealthCheck     *HealthCheckConfig
 	Image           string
 	Ipc             string
 	Labels          map[string]string `compose:"list_or_dict_equals"`
@@ -122,6 +123,13 @@ type DeployConfig struct {
 	Resources     Resources
 	RestartPolicy *RestartPolicy `mapstructure:"restart_policy"`
 	Placement     Placement
+}
+
+type HealthCheckConfig struct {
+	Command  []string `compose:"shell_command"`
+	Timeout  string
+	Interval string
+	Retries  *uint64
 }
 
 type UpdateConfig struct {
