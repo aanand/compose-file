@@ -222,6 +222,24 @@ services:
 	assert.Contains(t, err.Error(), "Non-string key in services.dict-env.environment: 1")
 }
 
+func TestSupportedVersion(t *testing.T) {
+	_, err := loadYAML(`
+version: "3"
+services:
+  foo:
+    image: busybox
+`)
+	assert.NoError(t, err)
+
+	_, err = loadYAML(`
+version: "3.0"
+services:
+  foo:
+    image: busybox
+`)
+	assert.NoError(t, err)
+}
+
 func TestUnsupportedVersion(t *testing.T) {
 	_, err := loadYAML(`
 version: "2"
