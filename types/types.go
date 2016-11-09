@@ -14,7 +14,6 @@ var UnsupportedProperties = []string{
 	"dns_search",
 	"domainname",
 	"external_links",
-	"extra_hosts",
 	"ipc",
 	"links",
 	"mac_address",
