@@ -603,6 +603,7 @@ func TestFullExample(t *testing.T) {
 		},
 		HealthCheck: &types.HealthCheckConfig{
 			Command: []string{
+				"CMD-SHELL",
 				"cat",
 				"/etc/passwd",
 			},
