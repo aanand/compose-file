@@ -578,7 +578,7 @@ func loadHealthcheck(value interface{}) (interface{}, error) {
 		words, err := shellwords.Parse(str)
 		return append([]string{"CMD-SHELL"}, words...), err
 	}
-	return append([]string{"CMD"}, value.([]string)...), nil
+	return value, nil
 }
 
 func loadSize(value interface{}) (int64, error) {
