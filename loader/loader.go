@@ -575,8 +575,7 @@ func loadShellCommand(value interface{}) (interface{}, error) {
 
 func loadHealthcheck(value interface{}) (interface{}, error) {
 	if str, ok := value.(string); ok {
-		words, err := shellwords.Parse(str)
-		return append([]string{"CMD-SHELL"}, words...), err
+		return append([]string{"CMD-SHELL"}, str), nil
 	}
 	return value, nil
 }
