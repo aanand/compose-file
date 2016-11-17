@@ -552,7 +552,7 @@ func TestFullExample(t *testing.T) {
 			Replicas: uint64Ptr(6),
 			Labels:   map[string]string{"FOO": "BAR"},
 			UpdateConfig: &types.UpdateConfig{
-				Parallelism:     uint64(3),
+				Parallelism:     uint64Ptr(3),
 				Delay:           time.Duration(10 * time.Second),
 				FailureAction:   "continue",
 				Monitor:         time.Duration(60 * time.Second),

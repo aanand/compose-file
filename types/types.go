@@ -132,7 +132,7 @@ type HealthCheckConfig struct {
 }
 
 type UpdateConfig struct {
-	Parallelism     uint64
+	Parallelism     *uint64
 	Delay           time.Duration
 	FailureAction   string `mapstructure:"failure_action"`
 	Monitor         time.Duration
