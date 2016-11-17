@@ -124,7 +124,7 @@ type DeployConfig struct {
 }
 
 type HealthCheckConfig struct {
-	Command  []string `compose:"healthcheck"`
+	Test     []string `compose:"healthcheck"`
 	Timeout  string
 	Interval string
 	Retries  *uint64

@@ -602,7 +602,7 @@ func TestFullExample(t *testing.T) {
 			"somehost":  "162.242.195.82",
 		},
 		HealthCheck: &types.HealthCheckConfig{
-			Command: []string{
+			Test: []string{
 				"CMD-SHELL",
 				"cat",
 				"/etc/passwd",
