@@ -604,8 +604,7 @@ func TestFullExample(t *testing.T) {
 		HealthCheck: &types.HealthCheckConfig{
 			Test: []string{
 				"CMD-SHELL",
-				"cat",
-				"/etc/passwd",
+				"echo \"hello world\"",
 			},
 			Interval: "10s",
 			Timeout:  "1s",

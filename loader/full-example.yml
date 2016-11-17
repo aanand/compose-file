@@ -108,7 +108,7 @@ services:
     hostname: foo
 
     healthcheck:
-      test: cat /etc/passwd
+      test: echo "hello world"
       interval: 10s
       timeout: 1s
       retries: 5
