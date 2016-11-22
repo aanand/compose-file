@@ -32,10 +32,14 @@ version: "3"
 services:
   foo:
     image: busybox
+    networks:
+      with_me:
   bar:
     image: busybox
     environment:
       - FOO=1
+    networks:
+      - with_ipam
 volumes:
   hello:
     driver: default
@@ -58,10 +62,12 @@ var sampleDict = types.Dict{
 	"services": types.Dict{
 		"foo": types.Dict{
 			"image": "busybox",
+			"networks": types.Dict{"with_me": nil},
 		},
 		"bar": types.Dict{
 			"image":       "busybox",
 			"environment": []interface{}{"FOO=1"},
+			"networks": []interface{}{"with_ipam"},
 		},
 	},
 	"volumes": types.Dict{
@@ -98,11 +104,17 @@ var sampleConfig = types.Config{
 			Name:        "foo",
 			Image:       "busybox",
 			Environment: map[string]string{},
+			Networks: map[string]*types.ServiceNetworkConfig{
+				"with_me": nil,
+			},
 		},
 		{
 			Name:        "bar",
 			Image:       "busybox",
 			Environment: map[string]string{"FOO": "1"},
+			Networks: map[string]*types.ServiceNetworkConfig{
+				"with_ipam": nil,
+			},
 		},
 	},
 	Networks: map[string]types.NetworkConfig{
