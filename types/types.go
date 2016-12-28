@@ -24,7 +24,9 @@ var UnsupportedProperties = []string{
 	"security_opt",
 	"shm_size",
 	"stop_signal",
+	"sysctls",
 	"tmpfs",
+	"userns_mode",
 }
 
 var DeprecatedProperties = map[string]string{
